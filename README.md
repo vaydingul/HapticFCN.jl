@@ -1,4 +1,4 @@
-# COMP541_Project
+# COMP541 Project
 Koc University 2020/2021 Fall COMP541 Project
 
 This GitHub project includes all the related files with COMP541 Deep Learning Course project.
