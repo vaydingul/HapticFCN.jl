@@ -21,9 +21,8 @@ function loaddata(filepath::String; mode::String = "baseline")
     count = 0
     for ftype in ftypes
         f_path = joinpath(filepath, ftype)
-        println(ftype)
         for dtype in dtypes
-            println(dtype)
+            println(titlecase(ftype), " ", dtype, " data is being loaded!")
             d_path = joinpath(f_path, dtype)
 
             folders = readdir(d_path)
