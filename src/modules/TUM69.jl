@@ -5,6 +5,32 @@ using DelimitedFiles: readdlm
 
 function loaddata(filepath::String; mode::String = "baseline")
 
+    #=
+    This function execute following processes:
+        - Read TUM69 Haptic Database
+        
+    Usage:
+    loaddata(data_directory; mode = "baseline")
+
+    Input:
+    filepath = It must point to where the data is situated
+    mode = It determines the reading mode.
+        mode = "baseline"  => Fetch 1 file from each folder [ Memory issues :( ]
+        mode = "normal" => Fetch all data in each folder [ Full training ]
+
+    Output:
+    X_accel_train = Training input data of acceleration signals
+    y_accel_train = Training output data of acceleration signals
+    X_accel_test  = Testing input data of acceleration signals
+    y_accel_test  = Testing output data of acceleration signals
+    X_image_train = Training input data of camera images
+    y_image_train = Training output data of camera images
+    X_image_test  = Testing input data of camera images
+    y_image_test  = Testing output data of camera images
+    material_dict = Dictionary which maps material names to the integers
+    =#
+
+    ############# Preallocatzion of output arrays and dictionary ###############
     X_accel_train = Array{Array{Float32, 1}, 1}()
     y_accel_train = Array{Int8,1}()
     X_image_train = Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, 1}() 
@@ -14,11 +40,18 @@ function loaddata(filepath::String; mode::String = "baseline")
     X_image_test  = Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, 1}()
     y_image_test  = Array{Int8,1}()
     material_dict = Dict{String,Int8}()
+    ############################################################################
 
-    ftypes = ["train", "test"]
-    dtypes = ["accel", "image"]
+
+    ftypes = ["train", "test"] # Folder type specification 1
+    dtypes = ["accel", "image"] # Folder type specification 2
 
     count = 0
+
+    #=
+        Below DISGUSTING for loop basically walks around all folders and reads
+        all necessary acceleration signal or camera imamge data. 
+    =#
     for ftype in ftypes
         f_path = joinpath(filepath, ftype)
         for dtype in dtypes

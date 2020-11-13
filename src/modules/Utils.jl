@@ -6,8 +6,26 @@ using PyCall: pyimport
 
 function plot_spectrogram(data, fs)
 
-    np = pyimport("numpy")
-    Pxx, freqs, bins, im = specgram(data, NFFT=500, noverlap=400, Fs=fs, window=np.hamming(500));
+    #=
+    This function execute following processes:
+        - Construct an spectrogram
+        - Plot the spectrogram
+        - It can be also output frequency domain data but, in the frame of PyPlot, it is not necessary,
+            it is being done by DSP library.
+
+    Usage:
+    plot_spectrogram(data; fs)
+
+    Input:
+    data = Data array
+    fs = Sampling frequency, which is needed for spectrogram coonstruction
+
+    Output:
+    []
+    =#
+
+    np = pyimport("numpy") # It must be imported to use Hamming window
+    Pxx, freqs, bins, im = specgram(data, NFFT=500, noverlap=400, Fs=fs, window=np.hamming(500)); # Built-in spectrogram function
     xlabel("Time")
     ylabel("Frequency")
 
