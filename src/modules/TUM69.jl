@@ -36,68 +36,64 @@ function load_accel_data(filepath::String; mode::String="baseline")
 
 
     ftypes = ["train", "test"] # Folder type specification 1
-    dtypes = ["accel"] # Folder type specification 2
+    dtype = "accel" # Folder type specification 2
 
     count = 0
 
     #= 
         Below DISGUSTING for loop basically walks around all folders and reads
         all necessary acceleration signal or camera imamge data. =#
-    for ftype in ftypes,
+    for ftype in ftypes
 
-        f_path in joinpath(filepath, ftype)
+        f_path = joinpath(filepath, ftype)
+        println(titlecase(ftype), " ", dtype, " data is being loaded!")
+        
+        d_path = joinpath(f_path, dtype)
+        folders = readdir(d_path)
 
-        for dtype in dtypes
+        for (ix, folder) in enumerate(folders)
 
-            println(titlecase(ftype), " ", dtype, " data is being loaded!")
-            d_path = joinpath(f_path, dtype)
-            folders = readdir(d_path)
+            if haskey(material_dict, folder)
 
-            for (ix, folder) in enumerate(folders)
+                nothing
 
-                if haskey(material_dict, folder)
+            else
 
-                    nothing
+                push!(material_dict, folder => count)
+                count += 1
 
-                else
+            end
 
-                    push!(material_dict, folder => count)
-                    count += 1
+            cum_data_path = joinpath(d_path, folder)
+            files = readdir(cum_data_path)
 
+            for (ix2, file) in enumerate(files)
+                    
+                mode == "baseline" && ix2 == 2 ? break : nothing 
+                full_file_path = joinpath(cum_data_path, file)
+             
+                data = readdlm(full_file_path, '\n', Float32)
+                data = reshape(data, size(data, 1))
+
+                if ftype == "train"
+
+                    dtype == "accel"
+                    push!(X_accel_train, data)
+                    push!(y_accel_train, material_dict[folder])
+                        
                 end
 
-                cum_data_path = joinpath(d_path, folder)
-                files = readdir(cum_data_path)
+                if ftype == "test"
 
-                for (ix2, file) in enumerate(files)
-                    
-                    mode == "baseline" && ix2 == 2 ? break : nothing 
-                    full_file_path = joinpath(cum_data_path, file)
-             
-                    data = readdlm(full_file_path, '\n', Float32)
-                    data = reshape(data, size(data, 1))
-
-                    if ftype == "train"
-
-                        dtype == "accel"
-                        push!(X_accel_train, data)
-                        push!(y_accel_train, material_dict[folder])
+                    push!(X_accel_test, data)
+                    push!(y_accel_test, material_dict[folder])
                         
-                    end
+                end
 
-                    if ftype == "test"
-
-                        push!(X_accel_test, data)
-                        push!(y_accel_test, material_dict[folder])
-                        
-                    end
-
-                end   
+            end   
                 
-            end
-                   
         end
-
+                   
     end
 
     return X_accel_train, y_accel_train, X_accel_test, y_accel_test, material_dict
@@ -138,7 +134,7 @@ function load_image_data(filepath::String; mode::String="baseline")
 
 
     ftypes = ["train", "test"] # Folder type specification 1
-    dtypes = ["image"] # Folder type specification 2
+    dtype = "image" # Folder type specification 2
 
     count = 0
 
@@ -148,60 +144,55 @@ function load_image_data(filepath::String; mode::String="baseline")
     for ftype in ftypes
 
         f_path = joinpath(filepath, ftype)
+        println(titlecase(ftype), " ", dtype, " data is being loaded!")
+        
+        d_path = joinpath(f_path, dtype)
+        folders = readdir(d_path)
 
-        for dtype in dtypes
+        for (ix, folder) in enumerate(folders)
 
-            println(titlecase(ftype), " ", dtype, " data is being loaded!")
-            d_path = joinpath(f_path, dtype)
+            if haskey(material_dict, folder)
 
-            folders = readdir(d_path)
+                nothing
 
-            for (ix, folder) in enumerate(folders)
+            else
 
-                if haskey(material_dict, folder)
+                push!(material_dict, folder => count)
+                count += 1
 
-                    nothing
+            end
 
-                else
+            cum_data_path = joinpath(d_path, folder)
+            files = readdir(cum_data_path)
 
-                    push!(material_dict, folder => count)
-                    count += 1
-
-                end
-
-                cum_data_path = joinpath(d_path, folder)
-                files = readdir(cum_data_path)
-
-                for (ix2, file) in enumerate(files)
+            for (ix2, file) in enumerate(files)
                     
-                    mode == "baseline" && ix2 == 2 ? break : nothing 
-                    full_file_path = joinpath(cum_data_path, file)
+                mode == "baseline" && ix2 == 2 ? break : nothing 
+                full_file_path = joinpath(cum_data_path, file)
 
-                    data = load(full_file_path)
+                data = load(full_file_path)
                     # data = channelview(data)
                     # data = convert.(Float32, data)
                     # data = reshape(data, (size(data, 2), size(data, 3), 3))
                     
-                    if ftype == "train"
+                if ftype == "train"
                       
-                        push!(X_image_train, data)
-                        push!(y_image_train, material_dict[folder])
+                    push!(X_image_train, data)
+                    push!(y_image_train, material_dict[folder])
                         
-                    end
+                end
 
-                    if ftype == "test"
+                if ftype == "test"
 
-                        push!(X_image_test, data)
-                        push!(y_image_test, material_dict[folder])
-
-                    end
+                    push!(X_image_test, data)
+                    push!(y_image_test, material_dict[folder])
 
                 end
-  
-            end
-            
-        end
 
+            end
+  
+        end
+            
     end
 
     return X_image_train, y_image_train, X_image_test, y_image_test, material_dict
