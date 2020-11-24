@@ -1,6 +1,6 @@
 module Utils
 
-
+using MultivariateStats: fit, PCA, transform
 using PyPlot: specgram, xlabel, ylabel
 using PyCall: pyimport
 
@@ -30,5 +30,14 @@ function plot_spectrogram(data, fs)
     ylabel("Frequency")
 
 end 
+
+function extract_PCA(data; max_out_dim = 50)
+
+    M = fit(PCA, data; maxoutdim = max_out_dim, pratio = 1.0 )
+    
+    return transform(M, data)
+
+end
+
 
 end
