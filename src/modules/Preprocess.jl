@@ -4,8 +4,6 @@ include("Utils.jl")
 
 using Images: channelview, imresize, RGB, FixedPointNumbers, UInt8, Normed
 using DSP: spectrogram, hamming, power, time, freq
-using PyPlot
-using PyCall
 using .Utils: extract_PCA
 
 function process_accel_signal(X::Array{Array{Float32, 1}, 1}, y::Array{Int8,1}; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
@@ -80,7 +78,38 @@ function process_accel_signal_X(acc_signal::Array{Float32,1}; freq_count=50, sig
     end
 end
 
-function process_image(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; resize_ratio=0.1)
+function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, 1}, y; crop_size = 384)
+
+    #=
+    This function execute following processes:
+        - It resizes the given image
+        - It converts to Float32 representation in (W, H ,3) form
+        - It rehapes to 4D form to be used in CNN
+        
+
+    Usage:
+    process_image(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; resize_ratio=0.1)
+
+    Input:
+    img = Pure image data in the form of Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, which is Images.jl library output
+    resize_ratio = Resizing ratio
+    
+
+    Output:
+    img = Converted and resized image
+    =#
+    X = process_image_X.(X; crop_size = crop_size)
+    y .+= 1
+    y_new = [fill(y[ix], size(x, 4)) for (ix,x) in enumerate(X)]
+    
+    X = cat(X..., dims = 4)
+    y_new = vcat(y_new...)
+    return X, y_new
+
+end
+
+
+function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; crop_size = 384)
 
     #=
     This function execute following processes:
@@ -101,14 +130,31 @@ function process_image(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; res
     img = Converted and resized image
     =#
 
-    img = imresize(img, ratio=resize_ratio) # Resize the image in the ratio of resize_ratio
+    #img = imresize(img, ratio=resize_ratio) # Resize the image in the ratio of resize_ratio
     img = channelview(img) # Fetch its channels ==> R,G,B
     img = convert.(Float32, img) # Convert to Float32 representation ==> (W,H,3)
-    img = size(img, 2) > size(img, 3) ? reshape(img, (size(img, 2), size(img, 3), 3, 1)) : reshape(img, (size(img, 3), size(img, 2), 3, 1))
-        # Finally reshape to 4D to be used in CNN
+    img = permutedims(img, (2, 3, 1))
+    img = split_into_patches(img, crop_size)
+    
     return img
 
 end
 
+function split_into_patches(img, crop_size)
+    (W, H) = size(img)[1:2]
+    W_div = div(W, crop_size)
+    H_div = div(H, crop_size)
+    img_patches = []
+    for k in 1:W_div
+        for m in 1:H_div
+        
+            x_lim = ((k-1) * crop_size + 1, k * crop_size);
+            y_lim = ((m-1) * crop_size + 1, m * crop_size);
+            #@show size(img[x_lim[1]:x_lim[2], y_lim[1]:y_lim[2], 1:3])
+            push!(img_patches, reshape(img[x_lim[1]:x_lim[2], y_lim[1]:y_lim[2], 1:3], crop_size, crop_size, 3, 1))
+        end
+    end
+    cat(img_patches..., dims = 4)
+end
 
 end

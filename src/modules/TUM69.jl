@@ -1,6 +1,6 @@
 module TUM69
 
-using Images: load, channelview, RGB, FixedPointNumbers, UInt8, Normed
+using Images: load, channelview, RGB, FixedPointNumbers, UInt8, Normed, ColorTypes
 using DelimitedFiles: readdlm
 
 function load_accel_data(filepath::String; mode::String="baseline")
