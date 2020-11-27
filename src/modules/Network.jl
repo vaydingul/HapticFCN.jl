@@ -164,6 +164,7 @@ struct GeneriCONV
         o_dense = o_dim # Output dimension of the MLP / end of the architecture
         
         if o_dim == 0
+            # If o_dim == 0, then it is FCN!
             nothing
         else
             # Construction of MLP that will be added to the end of the Convolutional chain
@@ -205,10 +206,27 @@ end
 
 function nll4(x, y)
 
+    #=
+    This function execute following processes:
+        - It calculates ´nll´ of 4D tensor output
+      
+    Usage:
+        nll(x, y)
+
+    Input:
+        x = Output of the network, dense prediction as 4D tensor
+        y = True label of the corresponding x
+    
+
+    Output:
+        loss = Calculated loss value
+    =#
+
     x = permutedims(x, (3,1,2,4))
     sc, sx, sy, sn = size(x)
     y_ = vcat(collect(fill(y[k], sx * sy ) for k in 1:sn)...)
-    return nll(mat(x, dims = 1), y_)
+    loss = nll(mat(x, dims = 1), y_)
+    return loss
 
 end
 
@@ -225,6 +243,28 @@ end
 
 function _accuracy4(x, y; average = true)
 
+    #=
+    This function execute following processes:
+        - It calculates accuracy of the model for given x and y value
+        - If average == true, then it gives directly the accuracy,
+            if it is not, then it gives correct number of predictions and total count as 
+            2-element Tuple.
+      
+    Usage:
+        _accuracy4(x, y)
+
+    Input:
+        x = Output of the network, dense prediction as 4D tensor
+        y = True label of the corresponding x
+    
+
+    Output:
+        _accuracy = Calculated accuracy
+        or
+        (correct_pred, total_count) = Number of correct predictions and total count as 
+            2-element Tuple.
+    =#
+
     x = permutedims(x, (3,1,2,4))
     sc, sx, sy, sn = size(x)
     correct = [max_vote(mat(x[:,:,:,k], dims = 1)) .== y[k] for k in 1:sn]
@@ -236,6 +276,21 @@ end
 
 function accuracy4(model; data::Data)
 
+    #=
+    This function execute following processes:
+        - It calculates accuracy of the model per batch for given model and Data object
+        - 
+    Usage:
+        accuracy4(model; data = test_set)
+
+    Input:
+        model = Network model to be evaluated
+        data = Batch to be processed in model
+    
+
+    Output:
+        accuracy = Calculated accuracy
+    =#
     correct = 0.0
     count = 0.0
 
@@ -246,7 +301,8 @@ function accuracy4(model; data::Data)
         count += cnt
     end
 
-    correct/count
+    accuracy = correct/count
+    return accuracy
 end
 
 
