@@ -19,3 +19,11 @@ The baseline model includes:
 * Short training
 * Visualization of the results
 * Metric calculation
+
+## V.0.1
+The baseline model is improved, and the one of the neural network, that is studied in the project paper, is constructed, namely HapticNet. The demonstration of the HapticNet can be found in this [notebook](https://github.com/vaydingul/COMP541_Project/blob/main/v.0.1/HapticNet.ipynb).
+
+The V.0.1 includes:
+* Improved data processing
+* New loss calculation scheme
+* New accuracy calculation scheme based on *max-voting* procedure

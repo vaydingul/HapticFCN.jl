@@ -39,5 +39,7 @@ function extract_PCA(data; max_out_dim = 50)
 
 end
 
+notify(str) = run(`curl https://notify.run/fnx04zT7QmOlLLa6 -d $str`)
+
 
 end
