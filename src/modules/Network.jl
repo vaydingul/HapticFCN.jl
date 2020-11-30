@@ -348,7 +348,7 @@ function train_summarize!(model, dtrn, dtst; train_type = "epoch", fig = true, i
     if train_type == "epoch"
         # Number of (epoch) times training
         result = ((model(dtrn), model(dtst), 1.0-accuracy4(model; data = dtrn), 1.0-accuracy4(model; data = dtst)) 
-                for x in takenth(progress(model.optimizer_type(model,ncycle(dtrn,epoch), lr = model.lr)),length(dtrn)));
+                for x in takenth(model.optimizer_type(model,ncycle(dtrn,epoch), lr = model.lr),length(dtrn)));
 
         result = reshape(collect(Float32,flatten(result)),(4,:));  
         

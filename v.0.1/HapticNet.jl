@@ -12,7 +12,8 @@ using Knet: KnetArray, adam, relu, minibatch
 using CUDA: CuArray
 import CUDA
 using AutoGrad
-
+using Knet
+using FileIO
 ## Handwritten modules
 using .TUM69: load_accel_data   # Data reading
 using .Preprocess: process_accel_signal # Preprocessing on the data
@@ -91,7 +92,7 @@ res = train_summarize!(hn, dtrn, dtst;
                        train_type = "epoch", fig = true, info = true, 
                        epoch = 100, conv_epoch = 50, max_conv_cycle = 20)
 
-Knet.save("$k.jld2","model", hn , "result", res)
+FileIO.save("$k.jld2","model", hn , "result", res)
 notify("$k. training epoch completed!")
 end
 
