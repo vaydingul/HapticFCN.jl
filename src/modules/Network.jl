@@ -465,7 +465,7 @@ end
                 for x in takenth(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr), length(dtrn)));
             end
 
-            result = Array(reshape(collect(Float32, flatten(result)), (4, :)));  
+            result = reshape(collect(Float32, flatten(result)), (4, :));  
         
         elseif train_type == "converge"
         
@@ -488,7 +488,7 @@ end
             
             end
         
-            result = Array(hcat(result...))
+            result = hcat(result...)
         
         end
     
