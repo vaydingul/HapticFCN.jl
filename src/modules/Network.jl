@@ -226,7 +226,7 @@ function (c::Conv)(x)
     
     if c.bn_
         x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
-        return KnetArray(batchnorm(x, bnmoments(), bnparams(Float32, size(x, 3))))
+        return batchnorm(x, bnmoments(), KnetArray(bnparams(Float32, size(x, 3))))
     
     else
 
