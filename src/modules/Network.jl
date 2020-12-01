@@ -136,7 +136,8 @@ struct GenericMLP
     optimizer_type # Optimizer type that will be used in training
     lr # Learning rate that will be fed into optimizer
     loss_fnc
-    function GenericMLP(i=784, o=10; hidden=[], f=relu, p=0.0, optimizer_type=sgd, lr=0.1, loss_fnc=nll,  atype=Array)
+    accuracy_fnc
+    function GenericMLP(i=784, o=10; hidden=[], f=relu, p=0.0, optimizer_type=sgd, lr=0.1, loss_fnc=nll, accuracy_fnc = accuracy, atype=Array)
         
         #= 
         GenericMLP
@@ -167,7 +168,7 @@ struct GenericMLP
             push!(layers, Dense(architecture[k], architecture[k + 1]; f=f, p=p, atype=atype)) 
         end
 
-        new(Tuple(layers), optimizer_type, lr, loss_fnc) 
+        new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc) 
         
     end
     
@@ -209,6 +210,7 @@ struct Conv
     stride_
     pool_
     bn_
+    atype
 end
 
 # Constructor definition for Convolutional layer
@@ -216,7 +218,7 @@ function Conv(w1::Int,w2::Int,cx::Int,cy::Int; f=relu, p=0, padding_=(0, 0),  st
             pool_=(2, 2), bn_=false ,atype=Array) 
 
     return Conv(param(w1, w2, cx, cy; atype=atype), param0(1, 1, cy, 1; atype=atype), f , p,
-                padding_, stride_, pool_, bn_)
+                padding_, stride_, pool_, bn_, atype)
 
 end
 
@@ -226,7 +228,7 @@ function (c::Conv)(x)
     
     if c.bn_
         x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
-        return batchnorm(x, bnmoments(), KnetArray(bnparams(Float32, size(x, 3))))
+        return batchnorm(x, bnmoments(), c.atype(bnparams(Float32, size(x, 3))))
     
     else
 
@@ -243,7 +245,8 @@ struct GCN
     optimizer_type
     lr
     loss_fnc
-    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, atype=Array)
+    accuracy_fnc
+    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc = accuracy, atype=Array)
         dilation = (1, 1)
         layers = []
         x, y, C_x = i_dim # Spatial dimension and channel size of the input
@@ -284,10 +287,10 @@ struct GCN
             f_dense = kernels[end][4]
             p_dense = kernels[end][5]
             gmlp = GenericMLP(convert(Int64, i_dense), o_dense; hidden=hidden, f=f_dense, p=p_dense,
-                            optimizer_type=optimizer_type, lr=lr, loss_fnc=loss_fnc, atype=atype)
+                            optimizer_type=optimizer_type, lr=lr, loss_fnc=loss_fnc, accuracy_fnc = accuracy_fnc, atype=atype)
             push!(layers, gmlp.layers...)
         end
-        new(Tuple(layers), optimizer_type, lr, loss_fnc)
+        new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc)
         
     end
 end
@@ -458,10 +461,10 @@ end
         # Number of (epoch) times training
 
             if progress_bar
-                result = ((model(dtrn), model(dtst), 1.0 - accuracy4(model; data=dtrn), 1.0 - accuracy4(model; data=dtst)) 
+                result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
                 for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr)), length(dtrn)));
             else
-                result = ((model(dtrn), model(dtst), 1.0 - accuracy4(model; data=dtrn), 1.0 - accuracy4(model; data=dtst)) 
+                result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
                 for x in takenth(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr), length(dtrn)));
             end
 
@@ -472,13 +475,13 @@ end
             result = [];
         
         # Training until %100 accuracy
-            while accuracy4(model; data=dtrn) != 1.0 && max_conv_cycle > 0
+            while model.accuracy_fnc(model; data=dtrn) != 1.0 && max_conv_cycle > 0
 
                 if progress_bar
-                    res = ((model(dtrn), model(dtst), 1 - accuracy4(model; data=dtrn), 1 - accuracy4(model; data=dtst))
+                    res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
                     for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, conv_epoch), lr=model.lr)), length(dtrn)));
                 else
-                    res = ((model(dtrn), model(dtst), 1 - accuracy4(model; data=dtrn), 1 - accuracy4(model; data=dtst))
+                    res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
                     for x in takenth(model.optimizer_type(model, ncycle(dtrn, conv_epoch), lr=model.lr), length(dtrn)));
 
                 end
@@ -536,7 +539,7 @@ end
             println("Train Misclassification Error = ", result[3,end])
             println("Test Misclassification Error = ", result[4,end])
             println("\n")
-            println("Test Accuracy = ", accuracy4(model; data=dtst))
+            println("Test Accuracy = ", model.accuracy_fnc(model; data=dtst))
             println("====================================================");
 
         
