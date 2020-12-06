@@ -74,7 +74,7 @@ function process_accel_signal_X(acc_signal::Array{Float32,1}; freq_count=50, sig
         return Pxx_PCA
     else
         Pxx = reshape(Pxx[1:freq_count, 1:signal_count], freq_count, signal_count, 1, 1) # Reshape to 4D form to be used in CNN
-        Pxx = (Pxx .- minimum(Pxx)) ./ (maximum(Pxx) - minimum(Pxx)) # Normalization of the data
+        Pxx = (Pxx .- minimum(Pxx, dims = 1)) ./ (maximum(Pxx, dims = 1) .- minimum(Pxx, dims = 1)) # Normalization of the data
         return Pxx
     end
 end
