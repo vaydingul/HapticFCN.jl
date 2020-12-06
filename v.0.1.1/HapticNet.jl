@@ -47,8 +47,8 @@ material_dict = @time load_accel_data(DATA_PATH; mode = "normal");  # Data loadi
 
 println("X_train = ", summary(X_train))
 println("y_train = ", summary(y_train))
-println("X_test  = ", summary(X_test))
-println("y_test  = ", summary(y_test))
+println("X_test  = ", surmmary(X_test))
+println("y_test  = ", summay(y_test))
 println("material_dict = ", summary(material_dict))
 
 #Preprocessing on the acceleration data
@@ -78,7 +78,7 @@ hn = GeneriCONV(INPUT_SIZE, 0.0, [(3, 3, 50, true), (3, 3, 100, true), (3, 3, 15
             hidden = [], f = relu, a_type = a_type(), pdrop = 0.5, 
             optimizer_type = adam, lr = 1e-4);
 
-
+k
 # Training routine
 # Currently, the model is not working due to the issue mentioned in: https://github.com/denizyuret/Knet.jl/issues/624#
 # As soon as it is solved, I hope the model will be accurately working.

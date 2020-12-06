@@ -35,7 +35,7 @@ struct GeneriCONV
 
         Example:
             gconv4 = GeneriCONV(INPUT_DIM, 10, [(5, 20), (4, 50), (3, 100)]; 
-                    hidden = [50],f = relu, a_type = a_type, pdrop = 0.0, 
+                    hidden = [50], f = relu, a_type = a_type, pdrop = 0.0, 
                     optimizer_type = adam, lr = 0.001)
 
         Input:
@@ -294,6 +294,7 @@ struct GCN
         
     end
 end
+
     function (gcn::GCN)(x)
         # Feed-forward through MLP model (whole architecture)
         for l in gcn.layers
@@ -327,7 +328,7 @@ end
         - It calculates ´nll´ of 4D tensor output
       
     Usage:
-        nll(x, y)
+        nll4(x, y)
 
     Input:
         x = Output of the network, dense prediction as 4D tensor
@@ -356,8 +357,8 @@ end
     end
 
 
-    function _accuracy4(x, y; average=true)
 
+    function _accuracy4(x, y; average=true)
     #= 
     This function execute following processes:
         - It calculates accuracy of the model for given x and y value
