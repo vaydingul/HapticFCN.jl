@@ -101,4 +101,4 @@ res = train_summarize!(model, dtrn, dtst;
 lval = model(dtrn)
 notify("Training is done!")
 notify("Loss = $lval")
-Knet.save("1.jld2", "model", model, "result", Array(res))
+Knet.save("1.jld2", "model", model)
