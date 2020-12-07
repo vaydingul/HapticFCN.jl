@@ -1,9 +1,9 @@
-
+#=
 using Pkg; 
 packages = ["Knet", "AutoGrad", "Random", "Test", "MLDatasets", "CUDA", "Plots", "GR","Statistics",
             "IterTools", "StatsBase", "DSP", "Images", "DelimitedFiles", "MultivariateStats", "PyPlot", "PyCall"];
 Pkg.add(packages);
-
+=#
 include("../src/modules/TUM69.jl")
 include("../src/modules/Preprocess.jl")
 include("../src/modules/Network.jl")
