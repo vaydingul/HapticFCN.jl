@@ -11,7 +11,7 @@ include("../src/modules/Utils.jl")
 
 ## Third party packages
 using Knet: KnetArray, adam, relu, minibatch
-using AutoGrad, Knet, CUDA
+using AutoGrad, Knet, CUDA, JLD2
 
 
 ## Handwritten modules
@@ -101,4 +101,5 @@ res = train_summarize!(model, dtrn, dtst;
 lval = model(dtrn)
 notify("Training is done!")
 notify("Loss = $lval")
-Knet.save("1.jld2", "model", model)
+
+JLD2.@save "trial.jld2" model res
