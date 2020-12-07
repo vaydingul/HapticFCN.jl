@@ -98,9 +98,7 @@ res = train_summarize!(model, dtrn, dtst;
                        train_type = "epoch", progress_bar = true ,fig = true, info = true, 
                        epoch = 1, conv_epoch = 50, max_conv_cycle = 20)
 
-l = model.loss_fnc(dtrn)
+l = model(dtrn)
 notify("Training is done!")
 notify("Loss = $l")
 Knet.save("$.jld2", "model", model, "result", res)
-
-accuracy(model; data = dtrn)
