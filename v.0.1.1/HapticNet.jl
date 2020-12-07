@@ -95,10 +95,10 @@ model = GCN(INPUT_SIZE, OUTPUT_SIZE,
 # As soon as it is solved, I hope the model will be accurately working.
 notify("Training started!")
 res = train_summarize!(model, dtrn, dtst; 
-                       train_type = "epoch", progress_bar = true ,fig = true, info = true, 
+                       train_type = "epoch", progress_bar = false ,fig = false, info = true, 
                        epoch = 1, conv_epoch = 50, max_conv_cycle = 20)
 
 lval = model(dtrn)
 notify("Training is done!")
 notify("Loss = $lval")
-Knet.save("1.jld2", "model", model, "result", res)
+Knet.save("1.jld2", "model", model, "result", Array(res))
