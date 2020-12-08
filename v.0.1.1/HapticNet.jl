@@ -93,17 +93,16 @@ model = GCN(INPUT_SIZE, OUTPUT_SIZE,
 # Training routine
 # Currently, the model is not working due to the issue mentioned in: https://github.com/denizyuret/Knet.jl/issues/624#
 # As soon as it is solved, I hope the model will be accurately working.
-for k in 1:10
 
-    notify("$k. training started!")
-    res = train_summarize!(model, dtrn, dtst; 
-                        train_type = "epoch", progress_bar = false ,fig = false, info = true, 
-                        epoch = 100, conv_epoch = 50, max_conv_cycle = 20)
+notify("Ttraining started!")
+res = train_summarize!(model, dtrn, dtst; 
+                    train_type = "epoch", progress_bar = false ,fig = false, info = true, 
+                    epoch = 10000, conv_epoch = 50, max_conv_cycle = 20)
 
-    lval = model(dtrn)
-    notify("$k. raining is done!")
-    notify("Loss = $lval")
+lval = model(dtrn)
+notify("Training is done!")
+notify("Loss = $lval")
 
-    JLD2.@save "$k.jld2" model res
+JLD2.@save "final.jld2" model res
 
 end
