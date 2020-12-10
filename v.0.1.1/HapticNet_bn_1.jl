@@ -103,5 +103,5 @@ lval = model(dtrn)
 notify("Training is done!")
 notify("Loss = $lval")
 
-JLD2.@save "final.jld2" model res
+JLD2.@save "final_bn_1.jld2" model res
 
