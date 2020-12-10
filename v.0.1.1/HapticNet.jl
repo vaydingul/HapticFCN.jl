@@ -105,4 +105,3 @@ notify("Loss = $lval")
 
 JLD2.@save "final.jld2" model res
 
-end
