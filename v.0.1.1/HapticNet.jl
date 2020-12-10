@@ -97,7 +97,7 @@ model = GCN(INPUT_SIZE, OUTPUT_SIZE,
 notify("Ttraining started!")
 res = train_summarize!(model, dtrn, dtst; 
                     train_type = "epoch", progress_bar = false ,fig = false, info = true, 
-                    epoch = 10000, conv_epoch = 50, max_conv_cycle = 20)
+                    epoch = 1000, conv_epoch = 50, max_conv_cycle = 20)
 
 lval = model(dtrn)
 notify("Training is done!")
