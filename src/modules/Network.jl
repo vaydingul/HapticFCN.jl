@@ -248,7 +248,7 @@ struct GCN
     accuracy_fnc
     L1
     L2
-    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc = accuracy, L1 = 0.0, L2 = 5e-4 atype=Array)
+    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc = accuracy, L1 = 0.0, L2 = 5e-4, atype=Array)
         dilation = (1, 1)
         layers = []
         x, y, C_x = i_dim # Spatial dimension and channel size of the input
@@ -292,7 +292,7 @@ struct GCN
                             optimizer_type=optimizer_type, lr=lr, loss_fnc=loss_fnc, accuracy_fnc = accuracy_fnc, atype=atype)
             push!(layers, gmlp.layers...)
         end
-        new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc)
+        new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc, L1, L2)
         
     end
 end
