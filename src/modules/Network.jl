@@ -209,16 +209,16 @@ struct Conv
     padding_
     stride_
     pool_
-    bn_
+    lrn_
     atype
 end
 
 # Constructor definition for Convolutional layer
 function Conv(w1::Int,w2::Int,cx::Int,cy::Int; f=relu, p=0, padding_=(0, 0),  stride_=(1, 1),
-            pool_=(2, 2), bn_=false ,atype=Array) 
+            pool_=(2, 2), lrn_=false ,atype=Array) 
 
     return Conv(param(w1, w2, cx, cy; atype=atype), param0(1, 1, cy, 1; atype=atype), f , p,
-                padding_, stride_, pool_, bn_, atype)
+                padding_, stride_, pool_, lrn_, atype)
 
 end
 
@@ -226,9 +226,9 @@ end
 # Callable object that feed-forwards one minibatch
 function (c::Conv)(x) 
     
-    if c.bn_
+    if c.lrn_
         x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
-        return batchnorm(x, bnmoments(), c.atype(bnparams(Float32, size(x, 3))))
+        return LR_norm(x; atype = c.atype)
     
     else
 
@@ -246,7 +246,9 @@ struct GCN
     lr
     loss_fnc
     accuracy_fnc
-    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc = accuracy, atype=Array)
+    L1
+    L2
+    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc = accuracy, L1 = 0.0, L2 = 5e-4 atype=Array)
         dilation = (1, 1)
         layers = []
         x, y, C_x = i_dim # Spatial dimension and channel size of the input
@@ -261,10 +263,10 @@ struct GCN
             padding_ = kernel[6]
             stride_ = kernel[7]
             pool_ = kernel[8]
-            bn_ = kernel[9]
+            lrn_ = kernel[9]
 
             push!(layers, Conv(spatial_x, spatial_y, C_x, C_y;f=f, p=0, padding_=padding_,  stride_=stride_,
-                 pool_=pool_, bn_=bn_ ,atype=atype))
+                 pool_=pool_, lrn_=lrn_ ,atype=atype))
             
             # Dimension calculation of the output for each filter
             x = 1 + floor((x + 2 * padding_[1] - ((spatial_x - 1) * dilation[1] + 1)) / stride_[1])
@@ -306,11 +308,16 @@ end
         return x
         
     end
+
     
     function (gcn::GCN)(x, y)
         # Loss calculation for one batch
-        return gcn.loss_fnc(gcn(x), y)
-        
+        loss = gcn.loss_fnc(gcn(x),y)
+        if Knet.training() # Only apply regularization during training, only to weights, not biases.
+        gcn.L1 != 0 && (loss += gcn.L1 * sum(sum(abs, l.w) for l in gcn.layers))
+        gcn.L2 != 0 && (loss += gcn.L2 * sum(sum(abs2,l.w) for l in gcn.layers))
+        end
+        return loss  
     end
     
     function (gcn::GCN)(data::Data)
@@ -319,7 +326,36 @@ end
         
     end
 
+    function LR_norm(x; o...)
+    
+        _, _, _, batch_size = size(x)
+         
+         for k in 1:batch_size
+             
+             x[:, :, :, k] = mapslices(x -> _LR_norm(x; o...), x[:, :, :, k], dims = 3)
+             
+         end
+         
+         return x
+         
+     end
 
+
+
+    function _LR_norm(x; k = 2, n = 5, alpha = 0.0001, beta = 0.75, atype = Array)
+    
+        nc = length(x)
+        x_ = atype(zeros(nc))
+        for i in 1:nc
+            
+            _lower = convert(Int, floor(max(1., i - n/2)))
+            _upper = convert(Int, floor(min(nc, i + n/2)))
+            _sum = sum(x[_lower:_upper].^2)
+            x_[i] = x[i] ./ ((k .+ alpha .* _sum).^beta)
+        end
+        
+        return x_
+    end
     
     function nll4(x, y)
 
