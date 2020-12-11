@@ -352,7 +352,8 @@ end
     function _LR_norm(x; k = 2, n = 5, alpha = 0.0001, beta = 0.75, atype = Array)
     
         nc = length(x)
-        x_ = atype(zeros(nc))
+        x_ = zeros(nc)
+        #x_ = atype(zeros(nc))
         for i in 1:nc
             
             _lower = convert(Int, floor(max(1., i - n/2)))
