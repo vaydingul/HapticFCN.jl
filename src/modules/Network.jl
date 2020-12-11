@@ -326,18 +326,25 @@ end
         
     end
 
-    function LR_norm(x; o...)
+    function LR_norm(x; atype = Array, o...)
     
         _, _, _, batch_size = size(x)
          
-         for k in 1:batch_size
-             
-             x[:, :, :, k] = mapslices(x -> _LR_norm(x; o...), x[:, :, :, k], dims = 3)
-             
-         end
-         
-         return x
-         
+        if atype == Array
+            for k in 1:batch_size
+                
+                x[:, :, :, k] = mapslices(x -> _LR_norm(x; o...), x[:, :, :, k], dims = 3)
+                
+            end
+        else
+            for k in 1:batch_size
+                
+                x[:, :, :, k] = atype(mapslices(x -> _LR_norm(x; o...), Array(x[:, :, :, k]), dims = 3))
+                
+            end
+        end
+
+        return x
      end
 
 
