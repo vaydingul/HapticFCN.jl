@@ -229,7 +229,7 @@ function (c::Conv)(x)
     if c.lrn_
 
         x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
-        return LR_norm(x)
+        return LR_norm(x; atype = c.atype)
     
     else
 
@@ -457,14 +457,14 @@ _sum = vcat(_sum...)
 return x./((k .+ alpha .* _sum).^beta)
 end =#
 
-function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , el_type=Float32) where T
+function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype = Array{Float32}, el_type=Float32) where T
     k, alpha, beta = convert.(el_type, [k, alpha, beta]) 
 
     nx, ny, nc, batch_size = size(x)
     x = permutedims(x, (3, 1, 2, 4))
     x = reshape(x, (nc, nx * ny, 1, batch_size))
     kernel_size = convert(Int, n + 1)
-    w = convert(T,reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1)))
+    w = convert(atype, reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1)))
     _sum = conv4(w, x.^2; padding=(convert(Int, ceil(n / 2)), 0))
     _sum = _sum[1:(end - divrem(n, 2)[2]), :, :, :]
     y = x ./ ((k .+ alpha .* _sum).^beta)
