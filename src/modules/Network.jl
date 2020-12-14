@@ -464,7 +464,7 @@ function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , el_type=Float32) wher
     x = permutedims(x, (3, 1, 2, 4))
     x = reshape(x, (nc, nx * ny, 1, batch_size))
     kernel_size = convert(Int, n + 1)
-    w = reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1))
+    w = convert(T,reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1)))
     _sum = conv4(w, x.^2; padding=(convert(Int, ceil(n / 2)), 0))
     _sum = _sum[1:(end - divrem(n, 2)[2]), :, :, :]
     y = x ./ ((k .+ alpha .* _sum).^beta)
