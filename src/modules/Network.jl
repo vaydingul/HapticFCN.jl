@@ -137,7 +137,7 @@ struct GenericMLP
     lr # Learning rate that will be fed into optimizer
     loss_fnc
     accuracy_fnc
-    function GenericMLP(i=784, o=10; hidden=[], f=relu, p=0.0, optimizer_type=sgd, lr=0.1, loss_fnc=nll, accuracy_fnc = accuracy, atype=Array)
+    function GenericMLP(i=784, o=10; hidden=[], f=relu, p=0.0, optimizer_type=sgd, lr=0.1, loss_fnc=nll, accuracy_fnc=accuracy, atype=Array)
         
         #= 
         GenericMLP
@@ -227,8 +227,9 @@ end
 function (c::Conv)(x) 
     
     if c.lrn_
+
         x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
-        return LR_norm(x; atype = c.atype)
+        return LR_norm(x)
     
     else
 
@@ -248,7 +249,7 @@ struct GCN
     accuracy_fnc
     L1
     L2
-    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc = accuracy, L1 = 0.0, L2 = 5e-4, atype=Array)
+    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc=accuracy, L1=0.0, L2=5e-4, atype=Array)
         dilation = (1, 1)
         layers = []
         x, y, C_x = i_dim # Spatial dimension and channel size of the input
@@ -289,7 +290,7 @@ struct GCN
             f_dense = kernels[end][4]
             p_dense = kernels[end][5]
             gmlp = GenericMLP(convert(Int64, i_dense), o_dense; hidden=hidden, f=f_dense, p=p_dense,
-                            optimizer_type=optimizer_type, lr=lr, loss_fnc=loss_fnc, accuracy_fnc = accuracy_fnc, atype=atype)
+                            optimizer_type=optimizer_type, lr=lr, loss_fnc=loss_fnc, accuracy_fnc=accuracy_fnc, atype=atype)
             push!(layers, gmlp.layers...)
         end
         new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc, L1, L2)
@@ -299,33 +300,33 @@ end
 
     function (gcn::GCN)(x)
         # Feed-forward through MLP model (whole architecture)
-        for l in gcn.layers
+    for l in gcn.layers
         
-            x = l(x)
-        
-        end
-        
-        return x
+        x = l(x)
         
     end
+        
+    return x
+        
+end
 
     
     function (gcn::GCN)(x, y)
         # Loss calculation for one batch
-        loss = gcn.loss_fnc(gcn(x),y)
-        if Knet.training() # Only apply regularization during training, only to weights, not biases.
+    loss = gcn.loss_fnc(gcn(x), y)
+    if Knet.training() # Only apply regularization during training, only to weights, not biases.
         gcn.L1 != 0 && (loss += gcn.L1 * sum(sum(abs, l.w) for l in gcn.layers))
-        gcn.L2 != 0 && (loss += gcn.L2 * sum(sum(abs2,l.w) for l in gcn.layers))
-        end
-        return loss  
+        gcn.L2 != 0 && (loss += gcn.L2 * sum(sum(abs2, l.w) for l in gcn.layers))
     end
+    return loss 
+end
     
     function (gcn::GCN)(data::Data)
         # Loss calculation for whole epoch/dataset
-        return mean(gcn(x, y) for (x, y) in data)
+    return mean(gcn(x, y) for (x, y) in data)
         
-    end
-
+end
+#= 
     function LR_norm(x; atype = Array, o...)
     
         _, _, _, batch_size = size(x)
@@ -363,8 +364,115 @@ end
         end
         
         return x_
-    end
+    end =#
+
+#= 
+
+function LR_norm(x; atype = Array{Float32}, o...)
+    _, _, _, batch_size = size(x)
+         
+    x_ = []
+            for k in 1:batch_size
+                
+               push!(x_, _LR_norm(x[: ,:, :, k]; atype = atype, o...))
+   
+            end
+
+     x = cat(x_...; dims = 4)
+        return x
+     end
+
+    function _LR_norm(x; atype =  Array{Float32}, o...)
     
+        nx, ny, nc = size(x)
+        
+        x = mat(x; dims = 2)
+        x_ = []#Array{atype}(undef, 0)
+        for k = 1:(nx * ny)
+            
+        push!(x_, __LR_norm(x[k, :]; atype = atype, o...))
+        
+        end
+    x_ = cat(x_...; dims = 2)
+    x = reshape(x_', (nx, ny, nc))
+    return x
+        
+    end
+
+    function __LR_norm(x; atype =  Array{Float32}, k = 2, n = 5, alpha = 0.0001, beta = 0.75)
+        nc = size(x, 1)
+        x_ = [] #atype(undef, 0)
+        for i in 1:nc
+            _lower = convert(Int, floor(max(1., i - n/2)))
+            _upper = convert(Int, floor(min(nc, i + n/2)))
+            _sum = sum(x[_lower:_upper].^2)
+            push!(x_, x[i] ./ ((k .+ alpha .* _sum).^beta))
+        
+        end
+        x = x_
+        return atype(x)
+    end =#
+
+#= 
+
+function LR_norm(x::T; o...) where T
+    
+    nx, ny, nc, batch_size = size(x)
+    
+    x = mat(permutedims(x, (3,1,2,4)); dims = 1)
+
+    x = x'
+    
+    y = similar(x)
+
+    x = getindex.([x], 1:size(x, 1), :)
+
+    y = _LR_norm.(x; o...)
+
+    y = vcat(y'...)
+
+    y = reshape(y, (nx, ny, batch_size, nc))
+
+    y = permutedims(y, (1,2,4,3))
+
+return y
+end
+
+function _LR_norm(x::T; k = 2, n = 5, alpha = 0.0001, beta = 0.75) where T
+
+k, n, alpha, beta = convert.(eltype(T), [k, n, alpha, beta]) 
+
+nc = length(x)
+
+_sum = []
+
+    for i in 1:nc
+        
+        _lower = convert(Int, floor(max(1., i - n/2)))
+        _upper = convert(Int, floor(min(nc, i + n/2)))
+        push!(_sum,  sum(x[_lower:_upper].^2))
+        
+    end
+_sum = vcat(_sum...)
+return x./((k .+ alpha .* _sum).^beta)
+end =#
+
+function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , el_type=Float32) where T
+    k, alpha, beta = convert.(el_type, [k, alpha, beta]) 
+
+    nx, ny, nc, batch_size = size(x)
+    x = permutedims(x, (3, 1, 2, 4))
+    x = reshape(x, (nc, nx * ny, 1, batch_size))
+    kernel_size = convert(Int, n + 1)
+    w = reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1))
+    _sum = conv4(w, x.^2; padding=(convert(Int, ceil(n / 2)), 0))
+    _sum = _sum[1:(end - divrem(n, 2)[2]), :, :, :]
+    y = x ./ ((k .+ alpha .* _sum).^beta)
+    y = reshape(y, (nc, nx, ny, batch_size))
+    y = permutedims(y, (2, 3, 1, 4))
+    return y
+end
+
     function nll4(x, y)
 
     #= 
@@ -382,23 +490,23 @@ end
     Output:
         loss = Calculated loss value =#
 
-        x = permutedims(x, (3, 1, 2, 4))
-        sc, sx, sy, sn = size(x)
-        y_ = vcat(collect(fill(y[k], sx * sy) for k in 1:sn)...)
-        loss = nll(mat(x, dims=1), y_)
-        return loss
+    x = permutedims(x, (3, 1, 2, 4))
+    sc, sx, sy, sn = size(x)
+    y_ = vcat(collect(fill(y[k], sx * sy) for k in 1:sn)...)
+    loss = nll(mat(x, dims=1), y_)
+    return loss
 
-    end
+end
 
 
     function max_vote(y)
-        y = getindex.(argmax(y, dims=1), 1)
-        u = unique(y)
-        d = Dict([(i, count(x -> x == i, y)) for i in u])
-        argmax(d)
+    y = getindex.(argmax(y, dims=1), 1)
+    u = unique(y)
+    d = Dict([(i, count(x -> x == i, y)) for i in u])
+    argmax(d)
     
     # mode(y)
-    end
+end
 
 
 
@@ -424,12 +532,12 @@ end
         (correct_pred, total_count) = Number of correct predictions and total count as 
             2-element Tuple. =#
 
-        x = permutedims(x, (3, 1, 2, 4))
-        sc, sx, sy, sn = size(x)
-        correct = [max_vote(mat(x[:,:,:,k], dims=1)) .== y[k] for k in 1:sn]
-        average ? (sum(correct) / length(correct)) : (sum(correct), length(correct))
+    x = permutedims(x, (3, 1, 2, 4))
+    sc, sx, sy, sn = size(x)
+    correct = [max_vote(mat(x[:,:,:,k], dims=1)) .== y[k] for k in 1:sn]
+    average ? (sum(correct) / length(correct)) : (sum(correct), length(correct))
 
-    end
+end
 
 
 
@@ -449,19 +557,19 @@ end
 
     Output:
         accuracy = Calculated accuracy =#
-        correct = 0.0
-        count = 0.0
+    correct = 0.0
+    count = 0.0
 
-        for (x, y) in data
+    for (x, y) in data
 
-            (corr, cnt) = _accuracy4(model(x), y; average=false)
-            correct += corr
-            count += cnt
-        end
-
-        accuracy = correct / count
-        return accuracy
+        (corr, cnt) = _accuracy4(model(x), y; average=false)
+        correct += corr
+        count += cnt
     end
+
+    accuracy = correct / count
+    return accuracy
+end
 
 
 
@@ -502,97 +610,95 @@ end
         Output:
             result = Loss and misclassification errors of train and test dataset =#
     
-        if train_type == "epoch"
+    if train_type == "epoch"
         # Number of (epoch) times training
 
-            if progress_bar
-                result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
+        if progress_bar
+            result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
                 for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr)), length(dtrn)));
-            else
-                result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
+        else
+            result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
                 for x in takenth(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr), length(dtrn)));
-            end
+        end
 
-            result = reshape(collect(Float32, flatten(result)), (4, :));  
+        result = reshape(collect(Float32, flatten(result)), (4, :));  
         
-        elseif train_type == "converge"
+    elseif train_type == "converge"
         
-            result = [];
+        result = [];
         
         # Training until %100 accuracy
-            while model.accuracy_fnc(model; data=dtrn) != 1.0 && max_conv_cycle > 0
+        while model.accuracy_fnc(model; data=dtrn) != 1.0 && max_conv_cycle > 0
 
-                if progress_bar
-                    res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
+            if progress_bar
+                res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
                     for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, conv_epoch), lr=model.lr)), length(dtrn)));
-                else
-                    res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
+            else
+                res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
                     for x in takenth(model.optimizer_type(model, ncycle(dtrn, conv_epoch), lr=model.lr), length(dtrn)));
 
-                end
-                max_conv_cycle -= 1;
-            
-                push!(result, reshape(collect(Float32, flatten(res)), (4, :)));
-            
             end
-        
-            result = hcat(result...)
-        
+            max_conv_cycle -= 1;
+            
+            push!(result, reshape(collect(Float32, flatten(res)), (4, :)));
+            
         end
+        
+        result = hcat(result...)
+        
+    end
     
-        if fig 
+    if fig 
         # Plotting
-            display(plot([result[1,:], result[2,:]], xlabel="Epoch", 
-                title="Loss", label=["Train Loss" "Test Loss"]));
+        display(plot([result[1,:], result[2,:]]; xlabel="Epoch", title="Loss", label=["Train Loss" "Test Loss"]));
         
-            display(plot([result[3,:], result[4,:]], xlabel="Epoch", 
-                title="Misclassification Error",label=["Train Misclassification Error" "Test Misclassification Error"]));
+        display(plot([result[3,:], result[4,:]]; xlabel="Epoch",title="Misclassification Error",label=["Train Misclassification Error" "Test Misclassification Error"]));
 
-        end
+    end
     
     
-        if info 
+    if info 
         # Text based information
         # Nothing but the redundantly placed print commands :)
         
-            param_sum = 0;
-            println("TRAINING PARAMETERS")
-            println("\n")
-            println("Activation Function = ", model.layers[1].f)
-            println("Optimizer Type = ", model.optimizer_type)
-            println("Learning Rate = ", model.lr)
-            println("====================================================");
-            println("LAYERS:");
-            println("\n")
+        param_sum = 0;
+        println("TRAINING PARAMETERS")
+        println("\n")
+        println("Activation Function = ", model.layers[1].f)
+        println("Optimizer Type = ", model.optimizer_type)
+        println("Learning Rate = ", model.lr)
+        println("====================================================");
+        println("LAYERS:");
+        println("\n")
         
         # Calculation of the total number of parameters in the model
-            for l in model.layers
-                println(typeof(l), " ==> W = ", size(l.w), "   b = ", size(l.b));
-                w = prod(size(l.w));
-                b = prod(size(l.b));
-                param_sum += w + b;
-            end
+        for l in model.layers
+            println(typeof(l), " ==> W = ", size(l.w), "   b = ", size(l.b));
+            w = prod(size(l.w));
+            b = prod(size(l.b));
+            param_sum += w + b;
+        end
         
-            println("====================================================");
-            println("In this network configuration,\nthere are total $param_sum parameters.");
-            println("====================================================");
-            println("Final Loss")
-            println("Train Loss = ", result[1,end])
-            println("Test Loss = ", result[2,end])
-            println("\n")
-            println("Final Misclassification Error")
-            println("Train Misclassification Error = ", result[3,end])
-            println("Test Misclassification Error = ", result[4,end])
-            println("\n")
-            println("Test Accuracy = ", model.accuracy_fnc(model; data=dtst))
-            println("====================================================");
+        println("====================================================");
+        println("In this network configuration,\nthere are total $param_sum parameters.");
+        println("====================================================");
+        println("Final Loss")
+        println("Train Loss = ", result[1,end])
+        println("Test Loss = ", result[2,end])
+        println("\n")
+        println("Final Misclassification Error")
+        println("Train Misclassification Error = ", result[3,end])
+        println("Test Misclassification Error = ", result[4,end])
+        println("\n")
+        println("Test Accuracy = ", model.accuracy_fnc(model; data=dtst))
+        println("====================================================");
 
         
         
-        end
-        
-        return result
     end
+        
+    return result
+end
 
 
 
