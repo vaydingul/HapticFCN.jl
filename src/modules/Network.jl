@@ -458,18 +458,31 @@ return x./((k .+ alpha .* _sum).^beta)
 end =#
 
 function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype = Array{Float32}, el_type=Float32) where T
+    # Float32 conversion not to obtain Float64 at the end
     k, alpha, beta = convert.(el_type, [k, alpha, beta]) 
 
     nx, ny, nc, batch_size = size(x)
-    x = permutedims(x, (3, 1, 2, 4))
+
+    # Take channels into front to apply convolution on them
+    x = permutedims(x, (3, 1, 2, 4)) 
     x = reshape(x, (nc, nx * ny, 1, batch_size))
+
     kernel_size = convert(Int, n + 1)
+
     w = convert(atype, reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1)))
+
     _sum = conv4(w, x.^2; padding=(convert(Int, ceil(n / 2)), 0))
-    _sum = _sum[1:(end - divrem(n, 2)[2]), :, :, :]
+    
+    # If the sliding window is odd numbered, then 
+    # we have one additional term at the end, which should be eliminated
+    _sum = _sum[1:(end - mod(n, 2)), :, :, :]
+    # LRN operation
     y = x ./ ((k .+ alpha .* _sum).^beta)
+
+    #Resconstructiong the original shape
     y = reshape(y, (nc, nx, ny, batch_size))
     y = permutedims(y, (2, 3, 1, 4))
+
     return y
 end
 
