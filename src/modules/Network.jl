@@ -2,7 +2,9 @@ module Network
 
 import Knet # load, save
 using Knet: conv4, pool, mat, KnetArray, nll, accuracy, zeroone, progress, progress!, sgd, adam, rmsprop,
-             adagrad, param, param0, dropout, relu, minibatch, Data, sigm, tanh, save, load
+             adagrad, param, param0, dropout, relu, minibatch, Data, sigm, tanh, save, load, batchnorm, 
+             bnparams, bnmoments
+
 using Statistics: mean
 using Plots
 using IterTools: ncycle, takenth
@@ -11,119 +13,29 @@ using Statistics: mean
 using Base.Iterators: flatten
 using StatsBase: mode
 
-# Dense layer definition
-struct Dense
-    w # weight 
-    b # bias 
-    f # activation function
-    p # dropout probability
-end
 
-# Constructor definition for Dense layer
-Dense(i::Int,o::Int,f=relu; a_type = Array, pdrop=0) = Dense(param(o, i; atype = a_type), param0(o; atype = a_type), f, pdrop)
-# Callable object that feed-forwards one minibatch through a layer
-(d::Dense)(x) = d.f.(d.w * mat(dropout(x, d.p)) .+ d.b) 
-
-
-# Struct that allows to create flexible MLP models
-struct GenericMLP
-    layers # List of layers that will be included in the MLP
-    optimizer_type # Optimizer type that will be used in training
-    lr # Learning rate that will be fed into optimizer
-    function GenericMLP(i = 784, o = 10; hidden = [], f = relu, pdrop = 0.0, optimizer_type = sgd, lr = 0.1, a_type = Array)
-        
-        #=
-        GenericMLP
-            - It is a generic/flexible MLP constructor
-            - It constructs the MLP according to the input, output, and hidden layer size.
-
-        Example:
-            GenericMLP(784, 10; hidden = [], f = identity, a_type = a_type, pdrop = 0, optimizer_type = sgd, lr = 0.15)
-
-        Input:
-            i = The size/length of the input data
-            o = The size/length of the output data
-            hidden = Layer size that will be placed between input and output layer
-            f = Activation function: (relu, sigm, identity, tanh)
-            pdrop = Dropout probability
-            optimizer_type = The optimizer which will be used: (adam, sgd, rmsprop, adagrad)
-            lr = Learning rate that will fed into optimizer
-            a_type = Array type
-
-        Output:
-            layers = Constructed Dense layers
-    =#
-    
-        architecture = vcat(i, hidden, o) # Architecture can be expressed as an 1D array
-        layers = []
-
-        for k in 1:size(architecture, 1) - 1
-            # It recursively constructs the Dense layers
-            push!(layers, Dense(architecture[k], architecture[k + 1], f, a_type = a_type, pdrop = pdrop)) 
-        end
-
-        new(Tuple(layers), optimizer_type, lr) 
-        
-    end
-    
-end
-
-
-
-function (gmlp::GenericMLP)(x)
-    # Feed-forward through MLP model (whole architecture)
-    for l in gmlp.layers
-    
-        x = l(x)
-    
-    end
-    
-    return x
-    
-end
-
-function (gmlp::GenericMLP)(x, y)
-    # Loss calculation for one batch
-    return nll(gmlp(x), y)
-    
-end
-
-function (gmlp::GenericMLP)(data::Data)
-    # Loss calculation for whole epoch/dataset
-    return mean(gmlp(x, y) for (x, y) in data)
-    
-end
-
-
-# Convolutional layer definition
-struct Conv
-    w # weight
-    b # bias
-    f # activation function
-    p # dropout probability
-    pool_opt # Whether pooling will take place or not
-end
+#= 
 
 # Constructor definition for Convolutional layer
-Conv(w1::Int,w2::Int,cx::Int,cy::Int,f=relu; a_type = Array, pdrop=0, pool_opt = true) = Conv(param(w1, w2, cx, cy; atype = a_type), param0(1, 1, cy, 1; atype = a_type), f, pdrop, pool_opt)
+Conv(w1::Int,w2::Int,cx::Int,cy::Int,f=relu; a_type=Array, pdrop=0, pool_opt=true) = Conv(param(w1, w2, cx, cy; atype=a_type), param0(1, 1, cy, 1; atype=a_type), f, pdrop, pool_opt)
 # Callable object that feed-forwards one minibatch
-(c::Conv)(x) = c.pool_opt ? c.f.(pool(conv4(c.w, x, padding = (1,1)) .+ c.b)) : c.f.(conv4(c.w, dropout(x, c.p)) .+ c.b) 
+(c::Conv)(x) = c.pool_opt ? c.f.(pool(conv4(c.w, x, padding=(1, 1)) .+ c.b)) : c.f.(conv4(c.w, dropout(x, c.p)) .+ c.b) 
 
 
 struct GeneriCONV
     layers # List of layers that will be included in the CNN
     optimizer_type # Optimizer type that will be used in training
     lr # Learning rate that will be fed into optimizer
-    function GeneriCONV(i_dim, o_dim, kernels; hidden = [], f = relu, pdrop = 0.0, optimizer_type = sgd, lr = 0.1, a_type = Array)
+    function GeneriCONV(i_dim, o_dim, kernels; hidden=[], f=relu, pdrop=0.0, optimizer_type=sgd, lr=0.1, a_type=Array)
             
-        #=
+        #= 
         GeneriCONV
             - It is a generic/flexible CNN constructor
             - It constructs the CNN according to the input, output,kernel and hidden layer size.
 
         Example:
             gconv4 = GeneriCONV(INPUT_DIM, 10, [(5, 20), (4, 50), (3, 100)]; 
-                    hidden = [50],f = relu, a_type = a_type, pdrop = 0.0, 
+                    hidden = [50], f = relu, a_type = a_type, pdrop = 0.0, 
                     optimizer_type = adam, lr = 0.001)
 
         Input:
@@ -138,8 +50,7 @@ struct GeneriCONV
             a_type = Array type
 
         Output:
-            layers = Constructed Dense layers
-    =#
+            layers = Constructed Dense layers =#
     
         layers = []
         x, y, C_x = i_dim # Spatial dimension and channel size of the input
@@ -150,7 +61,7 @@ struct GeneriCONV
             spatial_y = kernel[2] # Spatial dimension of the square filter
             C_y = kernel[3] # Output channel size of the square filter
             pool_opt = kernel[4]
-            push!(layers, Conv(spatial_x, spatial_y, C_x, C_y, f; a_type = a_type, pdrop = pdrop, pool_opt = pool_opt))
+            push!(layers, Conv(spatial_x, spatial_y, C_x, C_y, f; a_type=a_type, pdrop=pdrop, pool_opt=pool_opt))
             
             # Dimension calculation of the output for each filter
             x = pool_opt ? floor((x - spatial_x + 1) / 2) : x - spatial_x + 1
@@ -168,7 +79,7 @@ struct GeneriCONV
             nothing
         else
             # Construction of MLP that will be added to the end of the Convolutional chain
-            gmlp = GenericMLP(convert(Int64, i_dense), o_dense; hidden = hidden, f = f, a_type = a_type, pdrop = pdrop)
+            gmlp = GenericMLP(convert(Int64, i_dense), o_dense; hidden=hidden, f=f, a_type=a_type, pdrop=pdrop)
             push!(layers, gmlp.layers...)
         end
         new(Tuple(layers), optimizer_type, lr)
@@ -202,16 +113,387 @@ function (gconv::GeneriCONV)(data::Data)
     # Loss calculation for whole epoch/dataset
     return mean(gconv(x, y) for (x, y) in data)
     
+end =#
+
+# Dense layer definition
+struct Dense
+    w # weight 
+    b # bias 
+    f # activation function
+    p # dropout probability
 end
 
-function nll4(x, y)
 
-    #=
+# Constructor definition for Dense layer
+Dense(i::Int,o::Int; f=relu, p=0, atype=Array) = Dense(param(o, i; atype=atype), param0(o; atype=atype), f, p)
+# Callable object that feed-forwards one minibatch through a layer
+(d::Dense)(x) = d.f.(d.w * mat(dropout(x, d.p)) .+ d.b) 
+
+
+# Struct that allows to create flexible MLP models
+struct GenericMLP
+    layers # List of layers that will be included in the MLP
+    optimizer_type # Optimizer type that will be used in training
+    lr # Learning rate that will be fed into optimizer
+    loss_fnc
+    accuracy_fnc
+    function GenericMLP(i=784, o=10; hidden=[], f=relu, p=0.0, optimizer_type=sgd, lr=0.1, loss_fnc=nll, accuracy_fnc=accuracy, atype=Array)
+        
+        #= 
+        GenericMLP
+            - It is a generic/flexible MLP constructor
+            - It constructs the MLP according to the input, output, and hidden layer size.
+
+        Example:
+            GenericMLP(784, 10; hidden = [], f = identity, a_type = a_type, pdrop = 0, optimizer_type = sgd, lr = 0.15)
+
+        Input:
+            i = The size/length of the input data
+            o = The size/length of the output data
+            hidden = Layer size that will be placed between input and output layer
+            f = Activation function: (relu, sigm, identity, tanh)
+            pdrop = Dropout probability
+            optimizer_type = The optimizer which will be used: (adam, sgd, rmsprop, adagrad)
+            lr = Learning rate that will fed into optimizer
+            a_type = Array type
+
+        Output:
+            layers = Constructed Dense layers =#
+    
+        architecture = vcat(i, hidden, o) # Architecture can be expressed as an 1D array
+        layers = []
+
+        for k in 1:size(architecture, 1) - 1
+            # It recursively constructs the Dense layers
+            push!(layers, Dense(architecture[k], architecture[k + 1]; f=f, p=p, atype=atype)) 
+        end
+
+        new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc) 
+        
+    end
+    
+end
+
+
+
+function (gmlp::GenericMLP)(x)
+    # Feed-forward through MLP model (whole architecture)
+    for l in gmlp.layers
+    
+        x = l(x)
+    
+    end
+    
+    return x
+    
+end
+
+function (gmlp::GenericMLP)(x, y)
+    # Loss calculation for one batch
+    return gmlp.loss_fnc(gmlp(x), y)
+    
+end
+
+function (gmlp::GenericMLP)(data::Data)
+    # Loss calculation for whole epoch/dataset
+    return mean(gmlp(x, y) for (x, y) in data)
+    
+end
+
+
+struct Conv
+    w # weight
+    b # bias
+    f # activation function
+    p # dropout probability
+    padding_
+    stride_
+    pool_
+    lrn_
+    atype
+end
+
+# Constructor definition for Convolutional layer
+function Conv(w1::Int,w2::Int,cx::Int,cy::Int; f=relu, p=0, padding_=(0, 0),  stride_=(1, 1),
+            pool_=(2, 2), lrn_=false ,atype=Array) 
+
+    return Conv(param(w1, w2, cx, cy; atype=atype), param0(1, 1, cy, 1; atype=atype), f , p,
+                padding_, stride_, pool_, lrn_, atype)
+
+end
+
+
+# Callable object that feed-forwards one minibatch
+function (c::Conv)(x) 
+    
+    if c.lrn_
+
+        x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
+        return LR_norm(x; atype = c.atype)
+    
+    else
+
+        return c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
+
+    end
+
+
+end
+
+struct GCN
+
+    layers
+    optimizer_type
+    lr
+    loss_fnc
+    accuracy_fnc
+    L1
+    L2
+    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc=accuracy, L1=0.0, L2=5e-4, atype=Array)
+        dilation = (1, 1)
+        layers = []
+        x, y, C_x = i_dim # Spatial dimension and channel size of the input
+        
+        for kernel in kernels
+        
+            spatial_x = kernel[1] # Spatial dimension square filter
+            spatial_y = kernel[2] # Spatial dimension of the square filter
+            C_y = kernel[3] # Output channel size of the 
+            f = kernel[4]
+            p = kernel[5]
+            padding_ = kernel[6]
+            stride_ = kernel[7]
+            pool_ = kernel[8]
+            lrn_ = kernel[9]
+
+            push!(layers, Conv(spatial_x, spatial_y, C_x, C_y;f=f, p=0, padding_=padding_,  stride_=stride_,
+                 pool_=pool_, lrn_=lrn_ ,atype=atype))
+            
+            # Dimension calculation of the output for each filter
+            x = 1 + floor((x + 2 * padding_[1] - ((spatial_x - 1) * dilation[1] + 1)) / stride_[1])
+            x = 1 + floor((x - pool_[1]) / pool_[1])
+            y = 1 + floor((y + 2 * padding_[2] - ((spatial_y - 1) * dilation[2] + 1)) / stride_[2])
+            y = 1 + floor((y - pool_[2]) / pool_[2])
+
+            C_x = C_y # Input channel size of the new layer equals to output channel size of the previous layer
+        
+        end
+        
+        i_dense = x * y * C_x # Inout dimension of the first Dense layer
+        o_dense = o_dim # Output dimension of the MLP / end of the architecture
+        
+        if hidden == []
+            # If hidden == [], then it is FCN!
+            nothing
+        else
+            # Construction of MLP that will be added to the end of the Convolutional chain
+            f_dense = kernels[end][4]
+            p_dense = kernels[end][5]
+            gmlp = GenericMLP(convert(Int64, i_dense), o_dense; hidden=hidden, f=f_dense, p=p_dense,
+                            optimizer_type=optimizer_type, lr=lr, loss_fnc=loss_fnc, accuracy_fnc=accuracy_fnc, atype=atype)
+            push!(layers, gmlp.layers...)
+        end
+        new(Tuple(layers), optimizer_type, lr, loss_fnc, accuracy_fnc, L1, L2)
+        
+    end
+end
+
+    function (gcn::GCN)(x)
+        # Feed-forward through MLP model (whole architecture)
+    for l in gcn.layers
+        
+        x = l(x)
+        
+    end
+        
+    return x
+        
+end
+
+    
+    function (gcn::GCN)(x, y)
+        # Loss calculation for one batch
+    loss = gcn.loss_fnc(gcn(x), y)
+    if Knet.training() # Only apply regularization during training, only to weights, not biases.
+        gcn.L1 != 0 && (loss += gcn.L1 * sum(sum(abs, l.w) for l in gcn.layers))
+        gcn.L2 != 0 && (loss += gcn.L2 * sum(sum(abs2, l.w) for l in gcn.layers))
+    end
+    return loss 
+end
+    
+    function (gcn::GCN)(data::Data)
+        # Loss calculation for whole epoch/dataset
+    return mean(gcn(x, y) for (x, y) in data)
+        
+end
+#= 
+    function LR_norm(x; atype = Array, o...)
+    
+        _, _, _, batch_size = size(x)
+         
+        if atype == Array
+            for k in 1:batch_size
+                
+                x[:, :, :, k] = mapslices(x -> _LR_norm(x; o...), x[:, :, :, k], dims = 3)
+                
+            end
+        else
+            for k in 1:batch_size
+                
+                x[:, :, :, k] = atype(mapslices(x -> _LR_norm(x; o...), Array(x[:, :, :, k]), dims = 3))
+                
+            end
+        end
+
+        return x
+     end
+
+
+
+    function _LR_norm(x; k = 2, n = 5, alpha = 0.0001, beta = 0.75, atype = Array)
+    
+        nc = length(x)
+        x_ = zeros(nc)
+        #x_ = atype(zeros(nc))
+        for i in 1:nc
+            
+            _lower = convert(Int, floor(max(1., i - n/2)))
+            _upper = convert(Int, floor(min(nc, i + n/2)))
+            _sum = sum(x[_lower:_upper].^2)
+            x_[i] = x[i] ./ ((k .+ alpha .* _sum).^beta)
+        end
+        
+        return x_
+    end =#
+
+#= 
+
+function LR_norm(x; atype = Array{Float32}, o...)
+    _, _, _, batch_size = size(x)
+         
+    x_ = []
+            for k in 1:batch_size
+                
+               push!(x_, _LR_norm(x[: ,:, :, k]; atype = atype, o...))
+   
+            end
+
+     x = cat(x_...; dims = 4)
+        return x
+     end
+
+    function _LR_norm(x; atype =  Array{Float32}, o...)
+    
+        nx, ny, nc = size(x)
+        
+        x = mat(x; dims = 2)
+        x_ = []#Array{atype}(undef, 0)
+        for k = 1:(nx * ny)
+            
+        push!(x_, __LR_norm(x[k, :]; atype = atype, o...))
+        
+        end
+    x_ = cat(x_...; dims = 2)
+    x = reshape(x_', (nx, ny, nc))
+    return x
+        
+    end
+
+    function __LR_norm(x; atype =  Array{Float32}, k = 2, n = 5, alpha = 0.0001, beta = 0.75)
+        nc = size(x, 1)
+        x_ = [] #atype(undef, 0)
+        for i in 1:nc
+            _lower = convert(Int, floor(max(1., i - n/2)))
+            _upper = convert(Int, floor(min(nc, i + n/2)))
+            _sum = sum(x[_lower:_upper].^2)
+            push!(x_, x[i] ./ ((k .+ alpha .* _sum).^beta))
+        
+        end
+        x = x_
+        return atype(x)
+    end =#
+
+#= 
+
+function LR_norm(x::T; o...) where T
+    
+    nx, ny, nc, batch_size = size(x)
+    
+    x = mat(permutedims(x, (3,1,2,4)); dims = 1)
+
+    x = x'
+    
+    y = similar(x)
+
+    x = getindex.([x], 1:size(x, 1), :)
+
+    y = _LR_norm.(x; o...)
+
+    y = vcat(y'...)
+
+    y = reshape(y, (nx, ny, batch_size, nc))
+
+    y = permutedims(y, (1,2,4,3))
+
+return y
+end
+
+function _LR_norm(x::T; k = 2, n = 5, alpha = 0.0001, beta = 0.75) where T
+
+k, n, alpha, beta = convert.(eltype(T), [k, n, alpha, beta]) 
+
+nc = length(x)
+
+_sum = []
+
+    for i in 1:nc
+        
+        _lower = convert(Int, floor(max(1., i - n/2)))
+        _upper = convert(Int, floor(min(nc, i + n/2)))
+        push!(_sum,  sum(x[_lower:_upper].^2))
+        
+    end
+_sum = vcat(_sum...)
+return x./((k .+ alpha .* _sum).^beta)
+end =#
+
+function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype = Array{Float32}, el_type=Float32) where T
+    # Float32 conversion not to obtain Float64 at the end
+    k, alpha, beta = convert.(el_type, [k, alpha, beta]) 
+
+    nx, ny, nc, batch_size = size(x)
+
+    # Take channels into front to apply convolution on them
+    x = permutedims(x, (3, 1, 2, 4)) 
+    x = reshape(x, (nc, nx * ny, 1, batch_size))
+
+    kernel_size = convert(Int, n + 1)
+
+    w = convert(atype, reshape(ones(el_type, kernel_size), (kernel_size, 1, 1, 1)))
+
+    _sum = conv4(w, x.^2; padding=(convert(Int, ceil(n / 2)), 0))
+    
+    # If the sliding window is odd numbered, then 
+    # we have one additional term at the end, which should be eliminated
+    _sum = _sum[1:(end - mod(n, 2)), :, :, :]
+    # LRN operation
+    y = x ./ ((k .+ alpha .* _sum).^beta)
+
+    #Resconstructiong the original shape
+    y = reshape(y, (nc, nx, ny, batch_size))
+    y = permutedims(y, (2, 3, 1, 4))
+
+    return y
+end
+
+    function nll4(x, y)
+
+    #= 
     This function execute following processes:
         - It calculates ´nll´ of 4D tensor output
       
     Usage:
-        nll(x, y)
+        nll4(x, y)
 
     Input:
         x = Output of the network, dense prediction as 4D tensor
@@ -219,31 +501,30 @@ function nll4(x, y)
     
 
     Output:
-        loss = Calculated loss value
-    =#
+        loss = Calculated loss value =#
 
-    x = permutedims(x, (3,1,2,4))
+    x = permutedims(x, (3, 1, 2, 4))
     sc, sx, sy, sn = size(x)
-    y_ = vcat(collect(fill(y[k], sx * sy ) for k in 1:sn)...)
-    loss = nll(mat(x, dims = 1), y_)
+    y_ = vcat(collect(fill(y[k], sx * sy) for k in 1:sn)...)
+    loss = nll(mat(x, dims=1), y_)
     return loss
 
 end
 
 
-function max_vote(y)
-    y = getindex.(argmax(y, dims = 1), 1)
+    function max_vote(y)
+    y = getindex.(argmax(y, dims=1), 1)
     u = unique(y)
-    d=Dict([(i,count(x->x==i,y)) for i in u])
+    d = Dict([(i, count(x -> x == i, y)) for i in u])
     argmax(d)
     
-    #mode(y)
+    # mode(y)
 end
 
 
-function _accuracy4(x, y; average = true)
 
-    #=
+    function _accuracy4(x, y; average=true)
+    #= 
     This function execute following processes:
         - It calculates accuracy of the model for given x and y value
         - If average == true, then it gives directly the accuracy,
@@ -262,21 +543,20 @@ function _accuracy4(x, y; average = true)
         _accuracy = Calculated accuracy
         or
         (correct_pred, total_count) = Number of correct predictions and total count as 
-            2-element Tuple.
-    =#
+            2-element Tuple. =#
 
-    x = permutedims(x, (3,1,2,4))
+    x = permutedims(x, (3, 1, 2, 4))
     sc, sx, sy, sn = size(x)
-    correct = [max_vote(mat(x[:,:,:,k], dims = 1)) .== y[k] for k in 1:sn]
+    correct = [max_vote(mat(x[:,:,:,k], dims=1)) .== y[k] for k in 1:sn]
     average ? (sum(correct) / length(correct)) : (sum(correct), length(correct))
 
 end
 
 
 
-function accuracy4(model; data::Data)
+    function accuracy4(model; data::Data)
 
-    #=
+    #= 
     This function execute following processes:
         - It calculates accuracy of the model per batch for given model and Data object
         - 
@@ -289,26 +569,25 @@ function accuracy4(model; data::Data)
     
 
     Output:
-        accuracy = Calculated accuracy
-    =#
+        accuracy = Calculated accuracy =#
     correct = 0.0
     count = 0.0
 
     for (x, y) in data
 
-        (corr, cnt) = _accuracy4(model(x), y; average = false)
+        (corr, cnt) = _accuracy4(model(x), y; average=false)
         correct += corr
         count += cnt
     end
 
-    accuracy = correct/count
+    accuracy = correct / count
     return accuracy
 end
 
 
 
-function train_summarize!(model, dtrn, dtst; train_type = "epoch", fig = true, info = true, epoch = 100, conv_epoch = 50, max_conv_cycle = 20)
-    #=
+    function train_summarize!(model, dtrn, dtst; train_type="epoch", progress_bar=true, fig=true, info=true, epoch=100, conv_epoch=50, max_conv_cycle=20)
+    #= 
         train_summarize
             - It trains the given model
             - At the end of the training, it displays summary-like information of the training and the model
@@ -342,29 +621,39 @@ function train_summarize!(model, dtrn, dtst; train_type = "epoch", fig = true, i
                             has already been trained (max_conv_cycle * conv_epoch) times, then the iteration will be terminated.
 
         Output:
-            result = Loss and misclassification errors of train and test dataset
-    =#
+            result = Loss and misclassification errors of train and test dataset =#
     
     if train_type == "epoch"
         # Number of (epoch) times training
-        result = ((model(dtrn), model(dtst), 1.0-accuracy4(model; data = dtrn), 1.0-accuracy4(model; data = dtst)) 
-                for x in takenth(progress(model.optimizer_type(model,ncycle(dtrn,epoch), lr = model.lr)),length(dtrn)));
 
-        result = reshape(collect(Float32,flatten(result)),(4,:));  
+        if progress_bar
+            result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
+                for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr)), length(dtrn)));
+        else
+            result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
+                for x in takenth(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr), length(dtrn)));
+        end
+
+        result = reshape(collect(Float32, flatten(result)), (4, :));  
         
     elseif train_type == "converge"
         
         result = [];
         
         # Training until %100 accuracy
-        while accuracy4(model; data = dtrn) != 1.0 && max_conv_cycle > 0
-            
-            res = ((model(dtrn), model(dtst), 1-accuracy4(model; data = dtrn), 1-accuracy4(model; data = dtst))
-                for x in takenth(progress(model.optimizer_type(model,ncycle(dtrn,conv_epoch), lr = model.lr)),length(dtrn)));
-            
+        while model.accuracy_fnc(model; data=dtrn) != 1.0 && max_conv_cycle > 0
+
+            if progress_bar
+                res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
+                    for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, conv_epoch), lr=model.lr)), length(dtrn)));
+            else
+                res = ((model(dtrn), model(dtst), 1 - model.accuracy_fnc(model; data=dtrn), 1 - model.accuracy_fnc(model; data=dtst))
+                    for x in takenth(model.optimizer_type(model, ncycle(dtrn, conv_epoch), lr=model.lr), length(dtrn)));
+
+            end
             max_conv_cycle -= 1;
             
-            push!(result, reshape(collect(Float32,flatten(res)),(4,:)));
+            push!(result, reshape(collect(Float32, flatten(res)), (4, :)));
             
         end
         
@@ -374,11 +663,9 @@ function train_summarize!(model, dtrn, dtst; train_type = "epoch", fig = true, i
     
     if fig 
         # Plotting
-        display(plot([result[1,:], result[2,:]], xlabel = "Epoch", 
-                title = "Loss", label = ["Train Loss" "Test Loss"]));
+        display(plot([result[1,:], result[2,:]]; xlabel="Epoch", title="Loss", label=["Train Loss" "Test Loss"]));
         
-        display(plot([result[3,:], result[4,:]], xlabel = "Epoch", 
-                title = "Misclassification Error",label = ["Train Misclassification Error" "Test Misclassification Error"]));
+        display(plot([result[3,:], result[4,:]]; xlabel="Epoch",title="Misclassification Error",label=["Train Misclassification Error" "Test Misclassification Error"]));
 
     end
     
@@ -399,10 +686,10 @@ function train_summarize!(model, dtrn, dtst; train_type = "epoch", fig = true, i
         
         # Calculation of the total number of parameters in the model
         for l in model.layers
-            println(typeof(l)," ==> W = ",size(l.w),"   b = ",size(l.b));
+            println(typeof(l), " ==> W = ", size(l.w), "   b = ", size(l.b));
             w = prod(size(l.w));
             b = prod(size(l.b));
-            param_sum += w+b;
+            param_sum += w + b;
         end
         
         println("====================================================");
@@ -416,7 +703,7 @@ function train_summarize!(model, dtrn, dtst; train_type = "epoch", fig = true, i
         println("Train Misclassification Error = ", result[3,end])
         println("Test Misclassification Error = ", result[4,end])
         println("\n")
-        println("Test Accuracy = ", accuracy4(model; data = dtst))
+        println("Test Accuracy = ", model.accuracy_fnc(model; data=dtst))
         println("====================================================");
 
         
@@ -436,7 +723,7 @@ end
 
 
 
-#=
+#= 
 function train!(model, train_data, test_data; period=10, iters=100)
 
     #=
@@ -510,6 +797,5 @@ function accuracy(model, test_data)
     end
     return correct / count
 
-end
-=#
+end =#
 end
