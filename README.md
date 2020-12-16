@@ -27,3 +27,10 @@ The V.0.1 includes:
 * Improved data processing
 * New loss calculation scheme
 * New accuracy calculation scheme based on *max-voting* procedure
+
+## V.0.1.1
+In this version, mostly, the version v.0.1 is improved. The results and discussion about this version can be found in this [Excel Sheet](https://docs.google.com/spreadsheets/d/1KO6d-lZPePWM3OUPCAwU7RIf10dt26h3WW39059Uwas/edit?usp=sharing) and this [Word Document](https://docs.google.com/document/d/1QzXVCBX1liEPLB9E1T35SLpVcXVzFFjDJmBKs3h2mW4/edit?usp=sharing). In this version, the following updates were applied to the model:
+
+* Custom implementation of *Local Response Normalization*
+* L2 Regularization implementation
+* Fix on the *haptic* data normalization
