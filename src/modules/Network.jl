@@ -1,5 +1,6 @@
 module Network
 
+
 import Knet # load, save
 using Knet: conv4, pool, mat, KnetArray, nll, accuracy, zeroone, progress, progress!, sgd, adam, rmsprop,
              adagrad, param, param0, dropout, relu, minibatch, Data, sigm, tanh, save, load, batchnorm, 
@@ -229,7 +230,7 @@ function (c::Conv)(x)
     if c.lrn_
 
         x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
-        return LR_norm(x; atype = c.atype)
+        return LR_norm(x; atype=c.atype)
     
     else
 
@@ -298,7 +299,7 @@ struct GCN
     end
 end
 
-    function (gcn::GCN)(x)
+function (gcn::GCN)(x)
         # Feed-forward through MLP model (whole architecture)
     for l in gcn.layers
         
@@ -311,7 +312,7 @@ end
 end
 
     
-    function (gcn::GCN)(x, y)
+function (gcn::GCN)(x, y)
         # Loss calculation for one batch
     loss = gcn.loss_fnc(gcn(x), y)
     if Knet.training() # Only apply regularization during training, only to weights, not biases.
@@ -321,11 +322,12 @@ end
     return loss 
 end
     
-    function (gcn::GCN)(data::Data)
+function (gcn::GCN)(data::Data)
         # Loss calculation for whole epoch/dataset
     return mean(gcn(x, y) for (x, y) in data)
         
 end
+
 #= 
     function LR_norm(x; atype = Array, o...)
     
@@ -457,7 +459,30 @@ _sum = vcat(_sum...)
 return x./((k .+ alpha .* _sum).^beta)
 end =#
 
-function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype = Array{Float32}, el_type=Float32) where T
+function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype=Array{Float32}, el_type=Float32) where T
+
+    #= 
+    This function execute following processes:
+        - It calculates ´Local Response Normalization´ of 4D tensor output
+      
+    Usage:
+        LR_norm(x)
+
+    Input:
+        x = Input tensor
+        k = Additive factor to the normalization
+        n = Number of channels that will be taken into account
+        alpha = Scale factor
+        beta = Exponential factor
+        atype = Working array type
+        el_type = Working array element type
+    
+
+    Output:
+        y = Calculated LRN value =#
+
+
+
     # Float32 conversion not to obtain Float64 at the end
     k, alpha, beta = convert.(el_type, [k, alpha, beta]) 
 
@@ -479,14 +504,14 @@ function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype = Array{Float32
     # LRN operation
     y = x ./ ((k .+ alpha .* _sum).^beta)
 
-    #Resconstructiong the original shape
+    # Resconstructiong the original shape
     y = reshape(y, (nc, nx, ny, batch_size))
     y = permutedims(y, (2, 3, 1, 4))
 
     return y
 end
 
-    function nll4(x, y)
+function nll4(x, y)
 
     #= 
     This function execute following processes:
@@ -512,7 +537,7 @@ end
 end
 
 
-    function max_vote(y)
+function max_vote(y)
     y = getindex.(argmax(y, dims=1), 1)
     u = unique(y)
     d = Dict([(i, count(x -> x == i, y)) for i in u])
@@ -523,7 +548,7 @@ end
 
 
 
-    function _accuracy4(x, y; average=true)
+function _accuracy4(x, y; average=true)
     #= 
     This function execute following processes:
         - It calculates accuracy of the model for given x and y value
@@ -554,7 +579,7 @@ end
 
 
 
-    function accuracy4(model; data::Data)
+function accuracy4(model; data::Data)
 
     #= 
     This function execute following processes:
@@ -586,7 +611,7 @@ end
 
 
 
-    function train_summarize!(model, dtrn, dtst; train_type="epoch", progress_bar=true, fig=true, info=true, epoch=100, conv_epoch=50, max_conv_cycle=20)
+function train_summarize!(model, dtrn, dtst; train_type="epoch", progress_bar=true, fig=true, info=true, epoch=100, conv_epoch=50, max_conv_cycle=20)
     #= 
         train_summarize
             - It trains the given model
