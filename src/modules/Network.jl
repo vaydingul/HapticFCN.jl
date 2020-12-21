@@ -1,6 +1,5 @@
 module Network
 
-
 import Knet # load, save
 using Knet: conv4, pool, mat, KnetArray, nll, accuracy, zeroone, progress, progress!, sgd, adam, rmsprop,
              adagrad, param, param0, dropout, relu, minibatch, Data, sigm, tanh, save, load, batchnorm, 
@@ -14,6 +13,7 @@ using Statistics: mean
 using Base.Iterators: flatten
 using StatsBase: mode
 
+export GCN, nll4, accuracy4
 
 #= 
 
@@ -209,17 +209,27 @@ struct Conv
     p # dropout probability
     padding_
     stride_
-    pool_
+    pool_window_
+    pool_stride_
     lrn_
     atype
 end
 
-# Constructor definition for Convolutional layer
+# Constructor definition for Convolutional layer with given dimensions
 function Conv(w1::Int,w2::Int,cx::Int,cy::Int; f=relu, p=0, padding_=(0, 0),  stride_=(1, 1),
-            pool_=(2, 2), lrn_=false ,atype=Array) 
+            pool_window_ = (2, 2), pool_stride_ = (2,2), lrn_=false ,atype=Array) 
 
     return Conv(param(w1, w2, cx, cy; atype=atype), param0(1, 1, cy, 1; atype=atype), f , p,
-                padding_, stride_, pool_, lrn_, atype)
+                padding_, stride_, pool_window_, pool_stride_, lrn_, atype)
+
+end
+
+# Constructor definition for Convolutional layer with given dimensions
+function Conv(w, b; f=relu, p=0, padding_=(0, 0),  stride_=(1, 1),
+    pool_window_=(2, 2), pool_stride_ = (2, 2), lrn_=false ,atype=Array) 
+
+return Conv(param(w; atype=atype), param(reshape(b, (1,1,size(b,1), 1)); atype=atype), f , p,
+        padding_, stride_, pool_window_, pool_stride_, lrn_, atype)
 
 end
 
@@ -229,12 +239,12 @@ function (c::Conv)(x)
     
     if c.lrn_
 
-        x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
+        x = c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_window_, stride = c.pool_stride_))
         return LR_norm(x; atype=c.atype)
     
     else
 
-        return c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_))
+        return c.f.(pool(conv4(c.w, dropout(x, c.p), padding=c.padding_, stride=c.stride_) .+ c.b; window=c.pool_window_, stride = c.pool_stride_))
 
     end
 
@@ -254,30 +264,64 @@ struct GCN
         dilation = (1, 1)
         layers = []
         x, y, C_x = i_dim # Spatial dimension and channel size of the input
+        #C = C_x
         
         for kernel in kernels
-        
-            spatial_x = kernel[1] # Spatial dimension square filter
-            spatial_y = kernel[2] # Spatial dimension of the square filter
-            C_y = kernel[3] # Output channel size of the 
-            f = kernel[4]
-            p = kernel[5]
-            padding_ = kernel[6]
-            stride_ = kernel[7]
-            pool_ = kernel[8]
-            lrn_ = kernel[9]
+            if length(kernel) == 10
 
-            push!(layers, Conv(spatial_x, spatial_y, C_x, C_y;f=f, p=0, padding_=padding_,  stride_=stride_,
-                 pool_=pool_, lrn_=lrn_ ,atype=atype))
-            
-            # Dimension calculation of the output for each filter
-            x = 1 + floor((x + 2 * padding_[1] - ((spatial_x - 1) * dilation[1] + 1)) / stride_[1])
-            x = 1 + floor((x - pool_[1]) / pool_[1])
-            y = 1 + floor((y + 2 * padding_[2] - ((spatial_y - 1) * dilation[2] + 1)) / stride_[2])
-            y = 1 + floor((y - pool_[2]) / pool_[2])
+                spatial_x = kernel[1] # Spatial dimension x of the filter
+                spatial_y = kernel[2] # Spatial dimension y of the  filter
+                C_y = kernel[3] # Output channel size of the filter
+                f = kernel[4]
+                p = kernel[5]
+                padding_ = kernel[6]
+                stride_ = kernel[7]
+                pool_window_ = kernel[8]
+                pool_stride_ = kernel[9]
+                lrn_ = kernel[10]
 
-            C_x = C_y # Input channel size of the new layer equals to output channel size of the previous layer
-        
+                push!(layers, Conv(spatial_x, spatial_y, C_x, C_y;f=f, p=0, padding_=padding_,  stride_=stride_,
+                    pool_window_ = pool_window_, pool_stride_ = pool_stride_, lrn_=lrn_ ,atype=atype))
+                
+                # Dimension calculation of the output for each filter
+                x = 1 + floor((x + 2 * padding_[1] - ((spatial_x - 1) * dilation[1] + 1)) / stride_[1])
+                x = 1 + floor((x - pool_window_[1]) / pool_stride_[1])
+                y = 1 + floor((y + 2 * padding_[2] - ((spatial_y - 1) * dilation[2] + 1)) / stride_[2])
+                y = 1 + floor((y - pool_window_[2]) / pool_stride_[2])
+                #C = 1 + floor(C + 2 * padding_[3] - ((C_x - 1) * dilation[1] + 1))
+                #C_x = convert(Int64, 1 + floor(C_x + 2 * padding_[4] - ((C_y - 1) * dilation[1] + 1)))
+                C_x = C_y # Input channel size of the new layer equals to output channel size of the previous layer
+
+            elseif length(kernel) == 9
+
+                w_ = kernel[1]
+                b_ = kernel[2]
+                f = kernel[3]
+                p = kernel[4]
+                padding_ = kernel[5]
+                stride_ = kernel[6]
+                pool_window_ = kernel[7]
+                pool_stride_ = kernel[8]
+                lrn_ = kernel[9]
+
+                spatial_x = size(w_,1) # Spatial dimension x of the filter
+                spatial_y = size(w_,2) # Spatial dimension y of the  filter
+                C_y = size(w_,4) # Output channel size of the filter
+
+                push!(layers, Conv(w_, b_;f=f, p=0, padding_=padding_,  stride_=stride_,
+                    pool_window_ = pool_window_, pool_stride_ = pool_stride_, lrn_=lrn_ ,atype=atype))
+                
+                # Dimension calculation of the output for each filter
+                x = 1 + floor((x + 2 * padding_[1] - ((spatial_x - 1) * dilation[1] + 1)) / stride_[1])
+                x = 1 + floor((x - pool_window_[1]) / pool_stride_[1])
+                y = 1 + floor((y + 2 * padding_[2] - ((spatial_y - 1) * dilation[2] + 1)) / stride_[2])
+                y = 1 + floor((y - pool_window_[2]) / pool_stride_[2])
+
+                #C = 1 + floor(C + 2 * padding_[3] - ((C_x - 1) * dilation[1] + 1))
+                #C_x = convert(Int64, 1 + floor(C_x + 2 * padding_[4] - ((C_y - 1) * dilation[1] + 1)))
+                C_x = C_y # Input channel size of the new layer equals to output channel size of the previous layer
+
+            end
         end
         
         i_dense = x * y * C_x # Inout dimension of the first Dense layer
@@ -328,47 +372,50 @@ function (gcn::GCN)(data::Data)
         
 end
 
+
+
+
 #= 
-    function LR_norm(x; atype = Array, o...)
-    
-        _, _, _, batch_size = size(x)
-         
-        if atype == Array
-            for k in 1:batch_size
-                
-                x[:, :, :, k] = mapslices(x -> _LR_norm(x; o...), x[:, :, :, k], dims = 3)
-                
-            end
-        else
-            for k in 1:batch_size
-                
-                x[:, :, :, k] = atype(mapslices(x -> _LR_norm(x; o...), Array(x[:, :, :, k]), dims = 3))
-                
-            end
-        end
+function LR_norm(x; atype = Array, o...)
 
-        return x
-     end
-
-
-
-    function _LR_norm(x; k = 2, n = 5, alpha = 0.0001, beta = 0.75, atype = Array)
-    
-        nc = length(x)
-        x_ = zeros(nc)
-        #x_ = atype(zeros(nc))
-        for i in 1:nc
-            
-            _lower = convert(Int, floor(max(1., i - n/2)))
-            _upper = convert(Int, floor(min(nc, i + n/2)))
-            _sum = sum(x[_lower:_upper].^2)
-            x_[i] = x[i] ./ ((k .+ alpha .* _sum).^beta)
-        end
+    _, _, _, batch_size = size(x)
         
-        return x_
-    end =#
+    if atype == Array
+        for k in 1:batch_size
+            
+            x[:, :, :, k] = mapslices(x -> _LR_norm(x; o...), x[:, :, :, k], dims = 3)
+            
+        end
+    else
+        for k in 1:batch_size
+            
+            x[:, :, :, k] = atype(mapslices(x -> _LR_norm(x; o...), Array(x[:, :, :, k]), dims = 3))
+            
+        end
+    end
 
-#= 
+    return x
+end
+
+
+
+function _LR_norm(x; k = 2, n = 5, alpha = 0.0001, beta = 0.75, atype = Array)
+    
+    nc = length(x)
+    x_ = zeros(nc)
+    #x_ = atype(zeros(nc))
+    for i in 1:nc
+        
+        _lower = convert(Int, floor(max(1., i - n/2)))
+        _upper = convert(Int, floor(min(nc, i + n/2)))
+        _sum = sum(x[_lower:_upper].^2)
+        x_[i] = x[i] ./ ((k .+ alpha .* _sum).^beta)
+    end
+    
+    return x_
+end 
+
+
 
 function LR_norm(x; atype = Array{Float32}, o...)
     _, _, _, batch_size = size(x)
@@ -382,40 +429,39 @@ function LR_norm(x; atype = Array{Float32}, o...)
 
      x = cat(x_...; dims = 4)
         return x
-     end
+end
 
-    function _LR_norm(x; atype =  Array{Float32}, o...)
+function _LR_norm(x; atype =  Array{Float32}, o...)
+
+    nx, ny, nc = size(x)
     
-        nx, ny, nc = size(x)
+    x = mat(x; dims = 2)
+    x_ = []#Array{atype}(undef, 0)
+    for k = 1:(nx * ny)
         
-        x = mat(x; dims = 2)
-        x_ = []#Array{atype}(undef, 0)
-        for k = 1:(nx * ny)
-            
-        push!(x_, __LR_norm(x[k, :]; atype = atype, o...))
-        
-        end
-    x_ = cat(x_...; dims = 2)
-    x = reshape(x_', (nx, ny, nc))
-    return x
-        
+    push!(x_, __LR_norm(x[k, :]; atype = atype, o...))
+    
     end
+x_ = cat(x_...; dims = 2)
+x = reshape(x_', (nx, ny, nc))
+return x
+    
+end
 
-    function __LR_norm(x; atype =  Array{Float32}, k = 2, n = 5, alpha = 0.0001, beta = 0.75)
-        nc = size(x, 1)
-        x_ = [] #atype(undef, 0)
-        for i in 1:nc
-            _lower = convert(Int, floor(max(1., i - n/2)))
-            _upper = convert(Int, floor(min(nc, i + n/2)))
-            _sum = sum(x[_lower:_upper].^2)
-            push!(x_, x[i] ./ ((k .+ alpha .* _sum).^beta))
-        
-        end
-        x = x_
-        return atype(x)
-    end =#
+function __LR_norm(x; atype =  Array{Float32}, k = 2, n = 5, alpha = 0.0001, beta = 0.75)
+    nc = size(x, 1)
+    x_ = [] #atype(undef, 0)
+    for i in 1:nc
+        _lower = convert(Int, floor(max(1., i - n/2)))
+        _upper = convert(Int, floor(min(nc, i + n/2)))
+        _sum = sum(x[_lower:_upper].^2)
+        push!(x_, x[i] ./ ((k .+ alpha .* _sum).^beta))
+    
+    end
+    x = x_
+    return atype(x)
+end 
 
-#= 
 
 function LR_norm(x::T; o...) where T
     
@@ -437,27 +483,29 @@ function LR_norm(x::T; o...) where T
 
     y = permutedims(y, (1,2,4,3))
 
-return y
+    return y
 end
 
 function _LR_norm(x::T; k = 2, n = 5, alpha = 0.0001, beta = 0.75) where T
 
-k, n, alpha, beta = convert.(eltype(T), [k, n, alpha, beta]) 
+    k, n, alpha, beta = convert.(eltype(T), [k, n, alpha, beta]) 
 
-nc = length(x)
+    nc = length(x)
 
-_sum = []
+    _sum = []
 
-    for i in 1:nc
-        
-        _lower = convert(Int, floor(max(1., i - n/2)))
-        _upper = convert(Int, floor(min(nc, i + n/2)))
-        push!(_sum,  sum(x[_lower:_upper].^2))
-        
-    end
-_sum = vcat(_sum...)
-return x./((k .+ alpha .* _sum).^beta)
-end =#
+        for i in 1:nc
+            
+            _lower = convert(Int, floor(max(1., i - n/2)))
+            _upper = convert(Int, floor(min(nc, i + n/2)))
+            push!(_sum,  sum(x[_lower:_upper].^2))
+            
+        end
+    _sum = vcat(_sum...)
+    return x./((k .+ alpha .* _sum).^beta)
+end 
+
+=#
 
 function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype=Array{Float32}, el_type=Float32) where T
 
