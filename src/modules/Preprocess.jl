@@ -5,7 +5,7 @@ include("Utils.jl")
 using Images: channelview, imresize, RGB, FixedPointNumbers, UInt8, Normed
 using DSP: spectrogram, hamming, power, time, freq
 using .Utils: extract_PCA
-
+using Augmentor
 function process_accel_signal(X::Array{Array{Float32, 1}, 1}, y::Array{Int8,1}; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
     #=
     This function execute following processes:
@@ -78,6 +78,88 @@ function process_accel_signal_X(acc_signal::Array{Float32,1}; freq_count=50, sig
         return Pxx
     end
 end
+
+
+function augment_image(X, y; o...)
+
+    #=
+    This function execute following processes:
+        - It crops the given image to construct a tile view
+        - It converts to Float32 representation in (W, H ,3) form
+        - It rehapes to 4D form to be used in CNN
+        
+
+    Usage:
+        process_image(X::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, y; resize_ratio=0.1)
+
+    Input:
+        X = Input data
+        y = Output data
+        crop_size = Crop isze
+    
+
+    Output:
+        X = Preprocessed X data
+        y_new = Organized y data
+    =#
+
+    X = augment_image_X.(X; o...) # It applies the preprocessing to the all element
+
+    y .+= 1 # Add 1 to output to be able to adapt to Knet
+
+    # Since, the input data is splitted into parts, output data should be copied
+    y_new = [fill(y[ix], size(x, 1)) for (ix,x) in enumerate(X)] 
+    
+    X = cat(X..., dims = 1) # Concatenate input data
+    y_new = vcat(y_new...) # Concatenate output data
+    return X, y_new
+
+end
+
+function augment_image_X(X; x_flip = true, y_flip = true, xy_flip = true)
+
+    #=
+    This function execute following processes:
+        - It crops the given image to construct a tile view
+        - It converts to Float32 representation in (W, H ,3) form
+        - It rehapes to 4D form to be used in CNN
+        
+
+    Usage:
+        process_image(X::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, y; resize_ratio=0.1)
+
+    Input:
+        X = Input data
+        y = Output data
+        crop_size = Crop isze
+    
+
+    Output:
+        X = Preprocessed X data
+        y_new = Organized y data
+    =#
+    T = typeof(X)
+    imgs = similar([], T)
+
+
+    push!(imgs, X)
+    if x_flip
+        push!(imgs,augment(X, FlipX()))
+    end
+    if y_flip
+        push!(imgs,augment(X, FlipY()))
+    end
+    if xy_flip
+        p = FlipX() |> FlipY()
+        push!(imgs,augment(X, p))
+    end
+
+    return imgs
+
+
+end
+
+
 
 function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, 1}, y; crop_size = 384)
 
