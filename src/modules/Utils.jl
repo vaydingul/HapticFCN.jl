@@ -2,7 +2,8 @@ module Utils
 
 using MultivariateStats: fit, PCA, transform
 using CUDA
-
+using Knet: Data, minibatch
+using Random
 #using PyPlot: specgram, xlabel, ylabel
 #using PyCall: pyimport
 #=
@@ -61,5 +62,60 @@ end
 notify(str) = run(`curl https://notify.run/fnx04zT7QmOlLLa6 -d $str`)
 # Array type decider 
 a_type(T) = (CUDA.functional() ? KnetArray{T} : Array{T})
+
+
+
+struct kfold
+
+    folds::Array{Tuple{Data, Data}}
+
+end
+
+
+function kfold(X, y; fold = 10, minibatch_size = 10, atype = Array{Float32}, shuffle = true)
+    
+    folds_ = Array{Tuple{Data, Data}}([])
+    # Get size of the input data
+    n = size(X)
+    # We need to consider about sample size
+    n = n[end]
+
+    # Get permuted form of the indexes
+    perm_ixs = randperm(n)
+    # How many elements will be in one fold?
+    # We are excluding the remaining elements
+    fold_size = div(n, fold)
+
+    for k in 1:fold
+
+        l_test = (k - 1) * fold_size + 1
+        u_test = (k + 1) * fold_size
+
+        dtst = minibatch(X[:, :, :, l_test:u_test], y[l_test:u_test], minibatch_size; xtype = atype, shuffle = shuffle)
+        dtrn = minibatch(X[:, :, :, [1:(l_test-1)...,(u_test+1):end...]], y[[1:(l_test-1)...,(u_test+1):end...]], minibatch_size; xtype = atype, shuffle = shuffle)
+        push!(folds_, (dtrn, dtst))
+
+
+    end
+
+
+    kfold(folds_)
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end
