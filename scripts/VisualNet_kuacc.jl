@@ -12,16 +12,16 @@ using CUDA
 
 
 using JLD2, Random
-notify!("Script started!")
+notify!("Script started! -- vn")
 path = CUDA.functional() ? "/userfiles/vaydingul20/data/new" : "data/new" # path of the main data
 DATA_PATH = isdir(path) && path
 alexnet_PATH = "/scratch/users/vaydingul20/workfolder/COMP541_Project/alexnet.mat"
 
-notify!("Data reading started!")
+notify!("Data reading started! -- vn")
 
 X_train, y_train, _, _, material_dict = load_image_data(DATA_PATH; mode = "normal")
 
-notify!("Preprocessing started!")
+notify!("Preprocessing started! -- vn")
 
 X_train, y_train = augment_image(X_train, y_train)
 X_train, y_train = process_image(X_train, y_train)
@@ -30,11 +30,11 @@ X_train, y_train = process_image(X_train, y_train)
 kf = kfold(X_train, y_train, fold = 3, atype = a_type(Float32))
 results = []
 
-notify!("Training started!")
+notify!("Training started! -- vn")
 
-for (ix, dtrn, dtst) in enumerate(kf.folds)
+for (ix, (dtrn, dtst)) in enumerate(kf.folds)
     
-    notify!("Training $ix started!")
+    notify!("Training $ix started! -- vn")
 
     vn = VisualNet(alexnet_PATH; atype = a_type(Float32))
     res = train_epoch!(vn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 3000)
@@ -42,5 +42,5 @@ for (ix, dtrn, dtst) in enumerate(kf.folds)
     push!(results, res)
     
 end
-
+notify!("Training done! -- vn")
 JLD2.@save "results_vn.jld2" results = results
