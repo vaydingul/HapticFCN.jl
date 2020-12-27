@@ -7,6 +7,7 @@ using Distributed
 @everywhere using Preprocess: process_accel_signal, process_image, augment_image
 @everywhere using Utils: kfold, notify!, a_type
 using JLD2, Random
+using CUDA
 
 notify!("Script started!")
 
