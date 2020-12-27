@@ -1,13 +1,11 @@
 push!(LOAD_PATH, "/scratch/users/vaydingul20/workfolder/COMP541_Project/src/modules/")
 using Distributed
 
-@everywhere
-    using Pkg; Pkg.activate(".")  # required
-    using Model: HapticNet, VisualNet, train_epoch!, save_as_jld2
-    using TUM69: load_accel_data, load_image_data
-    using Preprocess: process_accel_signal, process_image, augment_image
-    using Utils: kfold, notify!, a_type
-end
+@everywhere using Pkg; Pkg.activate(".")  # required
+@everywhere using Model: HapticNet, VisualNet, train_epoch!, save_as_jld2
+@everywhere using TUM69: load_accel_data, load_image_data
+@everywhere using Preprocess: process_accel_signal, process_image, augment_image
+@everywhere using Utils: kfold, notify!, a_type
 
 using JLD2, Random
 
