@@ -1,7 +1,8 @@
-push!(LOAD_PATH, "/scratch/users/vaydingul20/workfolder/COMP541_Project/src/modules/")
-
 using Pkg
 Pkg.instantiate()
+
+push!(LOAD_PATH, "/scratch/users/vaydingul20/workfolder/COMP541_Project/src/modules/")
+
 
 using Model: HapticNet, VisualNet, train_epoch!, save_as_jld2
 using TUM69: load_accel_data, load_image_data
