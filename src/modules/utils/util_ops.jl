@@ -3,7 +3,7 @@ export extract_PCA ,kfold, notify!, a_type
 
 using MultivariateStats: fit, PCA, transform
 using CUDA
-using Knet: Data, minibatch
+using Knet: Data, minibatch, KnetArray
 using Random
 #using PyPlot: specgram, xlabel, ylabel
 #using PyCall: pyimport
