@@ -391,7 +391,7 @@ function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},
     # Since, the input data is splitted into parts, output data should be copied
     y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)] 
     
-    @time X = cat(X..., dims=4) # Concatenate input data
+    X = cat(X..., dims=4) # Concatenate input data
     y_new = vcat(y_new...) # Concatenate output data
     return X, y_new
 
@@ -418,14 +418,14 @@ function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; c
     Output:
         img = Converted and resized image =#
 
-    # img = imresize(img, ratio=0.5) # Resize the image in the ratio of resize_ratio
-    img = channelview(img) # Fetch its channels ==> R,G,B
-    img = convert.(Float32, img) # Convert to Float32 representation ==> (W,H,3)
-    img = permutedims(img, (2, 3, 1)) # Turn into the Knet applicable format
+    #img = imresize(img, ratio=0.5) # Resize the image in the ratio of resize_ratio
+    #@time img = channelview(img) # Fetch its channels ==> R,G,B
+    #@time img = convert.(Float32, img) # Convert to Float32 representation ==> (W,H,3)
+    #@time img = permutedims(img, (2, 3, 1)) # Turn into the Knet applicable format
+    
+    img = augment(img, SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
     img = split_into_patches(img, crop_size) # Split the image into patches to be able to increase dataset
     
-    return img
-
 end
 
 function split_into_patches(img, crop_size)
