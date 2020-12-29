@@ -425,10 +425,10 @@ function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; c
     =#
 
     #img = imresize(img, ratio=0.5) # Resize the image in the ratio of resize_ratio
-    @time img = channelview(img) # Fetch its channels ==> R,G,B
-    @time img = convert.(Float32, img) # Convert to Float32 representation ==> (W,H,3)
-    @time img = permutedims(img, (2, 3, 1)) # Turn into the Knet applicable format
-    @time img = split_into_patches(img, crop_size) # Split the image into patches to be able to increase dataset
+    img = channelview(img) # Fetch its channels ==> R,G,B
+    img = convert.(Float32, img) # Convert to Float32 representation ==> (W,H,3)
+    img = permutedims(img, (2, 3, 1)) # Turn into the Knet applicable format
+    img = split_into_patches(img, crop_size) # Split the image into patches to be able to increase dataset
     
     return img
 
