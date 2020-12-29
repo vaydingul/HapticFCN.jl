@@ -2,6 +2,7 @@ export process_accel_signal, process_accel_signal_X, process_image, process_imag
 
 include("..//utils//util_ops.jl")
 
+using TiledIteration
 using Images: channelview, imresize, RGB, FixedPointNumbers, UInt8, Normed
 using DSP: spectrogram, hamming, power, time, freq
 using Augmentor
@@ -203,7 +204,7 @@ function augment_image(X, y, o...)
     #push!(X_new, X_temp...) # It applies the preprocessing to the all element
     
     y .+= 1 # Add 1 to output to be able to adapt to Knet
-    y_new = vcat([y_ for y_ in 1:(n_ops+1)]...)
+    y_new = vcat([y_ for _ in 1:(n_ops+1)]...)
     
     return X_new, y_new
 
@@ -460,7 +461,8 @@ function split_into_patches(img, crop_size)
     etype = eltype(img)
     nd = ndims(img)
     img_patches = Array{Array{etype, nd + 1}}(undef, W_div * H_div)
-
+    
+    
     cnt = 1
     for k in 1:W_div
         for m in 1:H_div
@@ -468,10 +470,10 @@ function split_into_patches(img, crop_size)
             # Minibatching-like operation to split image into square tiles
             x_lim = ((k-1) * crop_size + 1, k * crop_size);
             y_lim = ((m-1) * crop_size + 1, m * crop_size);
-            img_patches[cnt] = reshape(img[x_lim[1]:x_lim[2], y_lim[1]:y_lim[2], 1:3], crop_size, crop_size, 3, 1)
+            img_patches[cnt] = reshape(@view(img[x_lim[1]:x_lim[2], y_lim[1]:y_lim[2], :]), crop_size, crop_size, 3, 1)
             cnt += 1
         end
     end
-
+    
     img_patches = cat(img_patches..., dims = 4) # Concatenate all of the square tiles
 end

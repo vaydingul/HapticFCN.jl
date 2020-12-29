@@ -4,8 +4,7 @@ using Preprocess: process_accel_signal, process_image, augment_image
 using Utils: notify!
 using Augmentor: FlipX, FlipY
 # xt, yt, _, _ = load_accel_data("data/trial"; mode = "baseline")
-xt_, yt_, _, _ = load_image_data("data/trial"; mode="baseline")
-notify!("data read")
+@time xt_, yt_, _, _ = load_image_data("data/trial"; mode="baseline")
 # xt, yt = process_accel_signal(xt, yt)
 # notify!("process accel")
 
@@ -17,8 +16,7 @@ notify!("data read")
 # notify!("augment")
 
 #@time xt_1, yt_1 = process_image(xt_, yt_)
-xt_2, yt_2 = process_image2(xt_, yt_)
-notify!("process image")
+@time xt_2, yt_2 = process_image(xt_, yt_);
 
 
 #augment(xt_[1], SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
