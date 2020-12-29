@@ -34,10 +34,12 @@ for (ix, (dtrn, dtst)) in enumerate(kf.folds)
     notify!("Training $ix started! -- hn")
 
     hn = HapticNet(; atype = a_type(Float32))
-    res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 3000)
-    save_as_jld2(hn, "hn-$ix.jld2")
-    push!(results, res)
-    
+
+    for k in 1:3
+        res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 1000)
+        save_as_jld2(hn, "hn-$ix-$k.jld2")
+        push!(results, res)
+    end
 end
 
 notify!("Training done! -- hn")
