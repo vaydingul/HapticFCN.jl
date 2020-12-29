@@ -8,7 +8,7 @@ using Distributed
 @everywhere using Utils: kfold, notify!, a_type
 using JLD2, Random
 using CUDA
-
+using Augmentor: FlipX, FlipY
 
 
 using JLD2, Random
