@@ -16,7 +16,8 @@ using Augmentor: FlipX, FlipY
 # notify!("augment")
 
 #@time xt_1, yt_1 = process_image(xt_, yt_)
-@time xt_2, yt_2 = process_image(xt_, yt_);
+xt_2, yt_2 = process_image(xt_, yt_);
 
 
 #augment(xt_[1], SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
+
