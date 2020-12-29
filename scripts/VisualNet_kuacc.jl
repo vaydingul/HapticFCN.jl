@@ -22,8 +22,11 @@ notify!("Data reading started! -- vn")
 X_train, y_train, _, _, material_dict = load_image_data(DATA_PATH; mode = "normal")
 
 notify!("Preprocessing started! -- vn")
-
-X_train, y_train = augment_image(X_train, y_train)
+# Augmentation pipeline
+p1 = FlipX()
+p2 = FlipY()
+p3 = FlipX() |> FlipY()
+X_train, y_train = augment_image(X_train, y_train, p1, p2, p3)
 X_train, y_train = process_image(X_train, y_train)
 #X_test, y_test = process_accel_signal(X_test, y_test)
 
