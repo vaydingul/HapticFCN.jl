@@ -204,7 +204,7 @@ function augment_image(X, y, o...)
     #push!(X_new, X_temp...) # It applies the preprocessing to the all element
     
     y .+= 1 # Add 1 to output to be able to adapt to Knet
-    y_new = vcat([y_ for _ in 1:(n_ops+1)]...)
+    y_new = vcat([y for _ in 1:(n_ops+1)]...)
     
     return X_new, y_new
 
