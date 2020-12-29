@@ -24,7 +24,7 @@ notify!("Preprocessing started! -- hn")
 X_train, y_train = process_accel_signal(X_train, y_train)
 #X_test, y_test = process_accel_signal(X_test, y_test)
 
-kf = kfold(X_train, y_train, fold = 3, atype = a_type(Float32))
+kf = kfold(X_train, y_train; fold = 3, atype = a_type(Float32))
 results = []
 
 notify!("Training started! -- hn")

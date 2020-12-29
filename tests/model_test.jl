@@ -1,4 +1,3 @@
-push!(LOAD_PATH, "C://Users//volkan//Desktop//Graduate//Graduate_Era//Courses//COMP_541//Project//COMP541_Project//src//modules")
 using Model: HapticNet, VisualNet, train_epoch!, save_as_jld2
 using TUM69: load_accel_data, load_image_data
 using Preprocess: process_accel_signal, process_image, augment_image
