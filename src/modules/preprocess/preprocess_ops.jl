@@ -196,7 +196,7 @@ function augment_image(X, y, o...)
     for (ix, ops) in enumerate(o)
         #X_temp = similar(X)
         augmentbatch!(X, X_, ops)
-        X_new[(ix) * n_ops + 1: n_ops * (ix + 1)] = X
+        X_new[(ix) * x_dim + 1: x_dim * (ix + 1)] = X
         #X_new[(k-1) * 3 + 1: 3 * k] = X_temp
     end
         
