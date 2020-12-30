@@ -181,9 +181,7 @@ function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; c
     Output:
         img = Converted and resized image =#
 
-    
-    
-    img = augment(img, SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
+    img = augment(img, Scale(0.5) |> SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
     img = split_into_patches(img, crop_size) # Split the image into patches to be able to increase dataset
     
 end
