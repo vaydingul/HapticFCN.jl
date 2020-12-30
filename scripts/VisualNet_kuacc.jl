@@ -43,7 +43,7 @@ notify!("Preprocessing started! -- vn")
 X_train, y_train = process_image(X_train, y_train)
 
 # Seperate into 3 folds for training
-kf = kfold(X_train, y_train, fold=3, atype=a_type(Float32))
+kf = kfold(X_train, y_train; fold=3, minibatch_size = 2; atype=a_type(Float32))
 results = []
 
 notify!("Training started! -- vn")
@@ -52,7 +52,7 @@ for (ix, (dtrn, dtst)) in enumerate(kf.folds)
     
     notify!("Training $ix started! -- vn")
 
-    #Rest the model
+    #Reset the model
     vn = VisualNet(alexnet_PATH; atype=a_type(Float32))
 
     for k in 1:3
