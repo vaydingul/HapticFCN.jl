@@ -5,13 +5,22 @@ using Knet, JLD2
 
 
 struct HapticNet
+    #=
 
-    model::GCN
+        Ready to use wrapper for the HapticNet
+
+    =#
+
+    model::GCN # GCN model that it wraps
 
 end
 
 function HapticNet(s::String)
+    #=
 
+        Constructor definition for pretrained networks
+
+    =#
     fname = endswith(s, ".jld2") && s
     JLD2.@load fname model
     HapticNet(model)
@@ -19,7 +28,12 @@ function HapticNet(s::String)
 end
 
 function HapticNet(; i = (50, 300, 1), o = 69, lrn = true, atype = Array{Float32})
-    
+    #=
+
+        Constructor definition for default HapticNet
+
+    =#
+
     model = GCN(i, o, 
        [(3, 3, 50, relu, 0.0, (1, 1), (1, 1),  (2, 2),(2, 2), lrn),
         (3, 3, 100, relu, 0.0, (1, 1), (1, 1), (2, 2),(2, 2), false),

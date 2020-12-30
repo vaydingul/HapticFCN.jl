@@ -168,32 +168,29 @@ function train_epoch!(model, dtrn, dtst; progress_bar=true, fig=true, info=true,
 
         Example:
             res_conv_4 = train_summarize(gconv4, dtrn, dtst; 
-                            train_type = "converge", fig = true, info = true, 
-                            epoch = 100, conv_epoch = 50, max_conv_cycle = 6);
+                            progress_bar = true, fig = true, info = true, 
+                            epoch = 100);
 
         Input:
             model = The NN model that will be trained
             dtrn = Train data
             dtst = Test data
-            train_type = It determines whether training will be based on a given epoch number or a condition.
-                        If train_type = "epoch", then the model will be trained (epoch) times.
-                        If train_type = "converge", the the model will be trained until
-                            %100 accuracy is obtained.
+          
+            
+            progress_bar = Progress bar setting
+
+            
             fig = Figure setting
                   If fig = true, then two figure will be displayed after training,
                   If fig = false, then no figure will be displayed.
+
+
             info = Text-based information setting
                   If info = true, then a text-based information will be displayed after training,
                   If info = false, then no text-based information will be displayed.
     
             epoch = If the train_type = "epoch", then it is number of epoch that the model will be trained.
     
-            conv_epoch = If the train_type = "converge", then, in each trial, the model will be trained (conv_epoch) times,
-                        and, then, the accuracy will be checked for termination of the iteration
-    
-            max_conv_cycle = If the train_type = "converge", and, still, the accuracy is not %100 when the model
-                            has already been trained (max_conv_cycle * conv_epoch) times, then the iteration will be terminated.
-
         Output:
             result = Loss and misclassification errors of train and test dataset =#
     

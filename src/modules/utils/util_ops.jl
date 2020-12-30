@@ -5,36 +5,6 @@ using MultivariateStats: fit, PCA, transform
 using CUDA
 using Knet: Data, minibatch, KnetArray
 using Random
-#using PyPlot: specgram, xlabel, ylabel
-#using PyCall: pyimport
-#=
-function plot_spectrogram(data, fs)
-
-    #=
-    This function execute following processes:
-        - Construct an spectrogram
-        - Plot the spectrogram
-        - It can be also output frequency domain data but, in the frame of PyPlot, it is not necessary,
-            it is being done by DSP library.
-
-    Usage:
-    plot_spectrogram(data; fs)
-
-    Input:
-    data = Data array
-    fs = Sampling frequency, which is needed for spectrogram coonstruction
-
-    Output:
-    []
-    =#
-
-    np = pyimport("numpy") # It must be imported to use Hamming window
-    Pxx, freqs, bins, im = specgram(data, NFFT=500, noverlap=400, Fs=fs, window=np.hamming(500)); # Built-in spectrogram function
-    xlabel("Time")
-    ylabel("Frequency")
-
-end 
-=#
 
 function extract_PCA(data; max_out_dim = 50)
     #=
@@ -67,14 +37,40 @@ a_type(T) = (CUDA.functional() ? KnetArray{T} : Array{T})
 
 
 struct kfold
+    #=
 
+        K-FOLD cross validation seperator for the data
+
+    =#
     folds::Array{Tuple{Data, Data}}
 
 end
 
 
 function kfold(X, y; fold = 10, minibatch_size = 10, atype = Array{Float32}, shuffle = true)
+    #= 
+        General constructor for kfold struct
+
+        kfold
+            - It seperated the gicen data into kfold for training
+
+        Example:
+            kf = kfold(X_train, y_train; fold = 3, atype = a_type(Float32))
+
+        Input:
+            X = Input data of the model
+            y = Desired output data of the model
+            fold = Fold Construct
+            minibatch_size = Minibatch size that will be included in each fold
+            atype = Array type that will be passes
+            shuffle = Shuffling option
+
+        Output:
+            result = Loss and misclassification errors of train and test dataset =#
     
+
+
+
     folds_ = Array{Tuple{Data, Data}}([])
     # Get size of the input data
     n = size(X)[end]
@@ -95,25 +91,23 @@ function kfold(X, y; fold = 10, minibatch_size = 10, atype = Array{Float32}, shu
     # We are excluding the remaining elements
     fold_size = div(n, fold)
 
-    #X_ns = size(X)
-    #X_ns[end] = fold_size
-
-    #y_ns = size(y)
-    #y_ns[end] = fold_size
 
     for k in 1:fold
 
+        # Lower and upper bounds of the folds
         l_test = (k - 1) * fold_size + 1
         u_test = k * fold_size
 
+        # Minibatching operation for each folding set
         dtst = minibatch(X2[:,[l_test:u_test...]], y2[: ,[l_test:u_test...]], minibatch_size; xtype = atype, shuffle = shuffle, xsize = (size(X)[1:end-1]..., fold_size), ysize = (size(y)[1:end-1]..., fold_size))
         dtrn = minibatch(X2[:,[1:(l_test-1)...,(u_test+1):end...]], y2[: ,[1:(l_test-1)...,(u_test+1):end...]], minibatch_size; xtype = atype, shuffle = shuffle, xsize = (size(X)[1:end-1]..., fold_size), ysize = (size(y)[1:end-1]..., fold_size))
+        
         push!(folds_, (dtrn, dtst))
 
 
     end
 
-
+    # Return constructed kfold object
     kfold(folds_)
 
 end
@@ -124,3 +118,39 @@ end
 
 
 
+#### NONACTIVE FUNCTIONS ####
+
+
+
+
+#using PyPlot: specgram, xlabel, ylabel
+#using PyCall: pyimport
+
+#=
+function plot_spectrogram(data, fs)
+
+    #=
+    This function execute following processes:
+        - Construct an spectrogram
+        - Plot the spectrogram
+        - It can be also output frequency domain data but, in the frame of PyPlot, it is not necessary,
+            it is being done by DSP library.
+
+    Usage:
+    plot_spectrogram(data; fs)
+
+    Input:
+    data = Data array
+    fs = Sampling frequency, which is needed for spectrogram coonstruction
+
+    Output:
+    []
+    =#
+
+    np = pyimport("numpy") # It must be imported to use Hamming window
+    Pxx, freqs, bins, im = specgram(data, NFFT=500, noverlap=400, Fs=fs, window=np.hamming(500)); # Built-in spectrogram function
+    xlabel("Time")
+    ylabel("Frequency")
+
+end 
+=#

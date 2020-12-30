@@ -9,8 +9,8 @@ struct GenericMLP
     layers # List of layers that will be included in the MLP
     optimizer_type # Optimizer type that will be used in training
     lr # Learning rate that will be fed into optimizer
-    loss_fnc
-    accuracy_fnc
+    loss_fnc # Default loss function that will be used during training
+    accuracy_fnc # Accuracy function
 
     function GenericMLP(i=784, o=10; hidden=[], f=relu, p=0.0, optimizer_type=sgd, lr=0.1, loss_fnc=nll, accuracy_fnc=accuracy, atype=Array)
         

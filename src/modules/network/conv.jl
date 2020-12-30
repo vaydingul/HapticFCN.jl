@@ -9,12 +9,12 @@ struct Conv
     b # bias
     f # activation function
     p # dropout probability
-    padding_
-    stride_
-    pool_window_
-    pool_stride_
-    lrn_
-    atype
+    padding_ # Padding that will be applied to the input
+    stride_  # Stride of the filter
+    pool_window_ # Pooling window
+    pool_stride_ # Stride of the pooling window
+    lrn_ # Local Response Normalization option
+    atype # Array type that will be fed to network
 end
 
 # Constructor definition for Convolutional layer with given dimensions
@@ -26,7 +26,7 @@ function Conv(w1::Int,w2::Int,cx::Int,cy::Int; f=relu, p=0, padding_=(0, 0),  st
 
 end
 
-# Constructor definition for Convolutional layer with given dimensions
+# Constructor definition for Convolutional layer with pretrained weight and biases
 function Conv(w, b; f=relu, p=0, padding_=(0, 0),  stride_=(1, 1),
     pool_window_=(2, 2), pool_stride_=(2, 2), lrn_=false ,atype=Array) 
 

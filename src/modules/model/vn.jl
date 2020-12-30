@@ -5,12 +5,22 @@ using Knet, JLD2, MAT
 
 
 struct VisualNet
+#=
 
+        Ready to use wrapper for the VisualNet
+
+=#
     model::GCN
 
 end
 
 function VisualNet(s::String; o...)
+
+    #=
+
+        Constructor definition for pretrained networks
+
+    =#
 
     if endswith(s, "jld2")
         fname = endswith(s, ".jld2") && s
@@ -24,7 +34,16 @@ end
 
 function VisualNet_(alexnet_dir; i = (384, 384, 3), o = 69, lrn = true, atype = Array{Float32})
 
+    #=
+
+        Constructor definition for default VisualNet
+
+    =#
+
+
+    # Loading weights from AlexNet
     alexnet = matread(alexnet_dir)
+    # Division by 2 at the right columns is to adapt AlexNet to the ungrouped convolution case
     conv1w = alexnet["params"]["value"][1]; conv1w = conv1w[:, :, :, 1:Int(size(conv1w,4) / 2)];
     conv1b = alexnet["params"]["value"][2]; conv1b = conv1b[1:Int(size(conv1b,1) / 2)];
     conv2w = alexnet["params"]["value"][3];
@@ -60,6 +79,7 @@ function VisualNet_(alexnet_dir; i = (384, 384, 3), o = 69, lrn = true, atype = 
     conv4_pool_stride = Tuple([1, 1])#Tuple(alexnet["layers"]["block"][9]["pad"])
     conv5_pool_stride = Tuple(convert(Array{Int}, vec(alexnet["layers"]["block"][13]["stride"])))
 
+    # Construction of the VisualNet with pretrained AlexNet + custom last three layers
     model = GCN(i, o, 
        [(conv1w, conv1b , relu, 0.0, conv1_pad, conv1_stride, conv1_pool_window, conv1_pool_stride, lrn),
         (conv2w, conv2b , relu, 0.0, conv2_pad, conv2_stride, conv2_pool_window, conv2_pool_stride, lrn),
