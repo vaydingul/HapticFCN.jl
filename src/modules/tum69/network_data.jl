@@ -1,8 +1,9 @@
 export iterate, NetworkData, length
 
-
 include("data_read_ops.jl")
 include("..//preprocess//preprocess_ops.jl")
+
+
 using Images
 using DelimitedFiles
 import Base: length, iterate, vcat
@@ -47,7 +48,7 @@ function NetworkData(main_path, type; data_type="train", read_type::String="basi
     else
 
         # data_train and data_test
-        train_data, test_data, material_dict = load_image_data(main_path; type=data_type, mode=read_type)
+        data, material_dict = load_image_data(main_path; type=data_type, mode=read_type)
 
     end
 
@@ -62,12 +63,11 @@ end
 
 function NetworkData(data, nd::NetworkData)
 
-    return NetworkData(data, type, nd.material_dict, nd.shuffle, nd.read_them_all, nd.batchsize, nd.atype)
+    return NetworkData(data, nd.type, nd.material_dict, nd.shuffle, nd.read_them_all, nd.batchsize, nd.atype)
 
 end
 
 length(nd::NetworkData) = length(nd.data)
-
 
 function iterate(nd::NetworkData, i=0)
 

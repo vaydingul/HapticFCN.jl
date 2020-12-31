@@ -1,6 +1,6 @@
 export VisualNet
 
-include("..//network//gcn.jl")
+include("..//network//gcn.jl");
 using Knet, JLD2, MAT
 
 

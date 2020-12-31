@@ -1,4 +1,4 @@
-export LR_norm, nll4, accuracy4, _accuracy4, train_epoch!
+export LR_norm, nll4, accuracy4, _accuracy4, train_epoch!, train_generic!
 
 using Knet, Plots
 using Knet: Data
@@ -257,5 +257,21 @@ function train_epoch!(model, dtrn, dtst; progress_bar=true, fig=true, info=true,
     end
         
     return result
+end
+
+
+
+function train_generic!(model, dtrn, dtst; optimizer_type = nothing, lr = nothing)
+
+
+
+    opt_ = optimizer_type === nothing ? model.optimizer_type : optimizer_type
+    lr_ = lr === nothing ? model.lr : lr
+
+    opt_(model, dtrn, lr= lr_);
+
+
+    return model(dtrn), model(dtst), model.accuracy_fnc(dtrn), model.accuracy_fnc(dtst)
+
 end
 

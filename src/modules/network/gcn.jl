@@ -1,11 +1,14 @@
 export GCN
 
+using Knet
+using Statistics
+import Knet: Data
+
+
+include("..//tum69//network_data.jl")
 include("genericmlp.jl")
 include("conv.jl")
 include("network_ops.jl")
-using Knet
-using Statistics
-using Knet: Data
 
 
 
@@ -22,10 +25,10 @@ struct GCN
     L2 # L2 normalization factor
 
 
-    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=sgd, lr=0.1, loss_fnc=nll4, accuracy_fnc=accuracy4, L1=0.0, L2=5e-4, atype=Array)
+    function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=adam, lr=1e-4, loss_fnc=nll4, accuracy_fnc=accuracy4, L1=0.0, L2=5e-4, atype=Array)
         # ´kernels´ field represents the specificaton of the Convolutional and Pooling layer properties
         # that will be passed to network
-        #=
+        #= 
             kernel[1] = Width of the filter
             kernel[2] = Height of the filter
             kernel[3] = Output dimension of the filter
@@ -35,8 +38,7 @@ struct GCN
             kernel[7] = Stride of the filter
             kernel[8] = Pooling window
             kernel[9] = Stride of the pooling window
-            kernel[10] = Local response normalization option
-        =#
+            kernel[10] = Local response normalization option =#
         
         
         # Trivial dilation
@@ -130,7 +132,7 @@ struct GCN
     end
 end
 
-function (gcn::GCN)(x)
+function (gcn::GCN)(x::AbstractArray)
         # Feed-forward through MLP model (whole architecture)
     for l in gcn.layers
         
@@ -153,9 +155,14 @@ function (gcn::GCN)(x, y)
     return loss 
 end
     
-function (gcn::GCN)(data::Data)
+function (gcn::GCN)(data::Data) 
         # Loss calculation for whole epoch/dataset
     return mean(gcn(x, y) for (x, y) in data)
         
+end
+
+function (gcn::GCN)(data::T) where {T <: Union{Data, NetworkData}}
+        # Loss calculation for whole epoch/dataset
+    return mean(gcn(x, y) for (x, y) in data)
 end
 

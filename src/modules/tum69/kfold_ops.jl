@@ -1,26 +1,25 @@
+export kfold
 
-include("network_data.jl")
-
-struct kfold_
+struct kfold{T} 
     #= 
 
         K-FOLD cross validation seperator for the data =#
 
-    folds::Array{Tuple{NetworkData, NetworkData}}
+    folds::Array{Tuple{T, T}}
 
 end
 
 
 
-function kfold_(X::NetworkData; fold=10)
+function kfold(X::D; fold=10) where D
     #= 
         General constructor for kfold_ struct
 
-        kfold_
+        kfold
             - It seperated the gicen data into kfold_ for training
 
         Example:
-            kf = kfold_(X_train, y_train; fold = 3, atype = a_type(Float32))
+            kf = kfold(X_train, y_train; fold = 3, atype = a_type(Float32))
 
         Input:
             X = Input data of the model
@@ -36,14 +35,14 @@ function kfold_(X::NetworkData; fold=10)
 
 
 
-    folds_ = Array{Tuple{NetworkData, NetworkData}}([])
+    folds_ = Array{Tuple{D, D}}([])
     # Get size of the input data
     n = length(X)[end]
     # We need to consider about sample size
 
     # Get permuted form of the indexes
-    perm_ixs = randperm(n)
-    X.data = X.data[perm_ixs]
+    
+    data_ = X.shuffle ? X.data[randperm(n)] : X.data
 
     # How many elements will be in one fold?
     # We are excluding the remaining elements
@@ -57,14 +56,14 @@ function kfold_(X::NetworkData; fold=10)
         u_test = k * fold_size
 
         tst = [l_test:u_test...]
-        trn = [1:(l_test - 1)...,(u_test + 1):length(nd)...]
+        trn = [1:(l_test - 1)...,(u_test + 1):length(X)...]
         # Minibatching operation for each folding set
-        push!(folds_, (NetworkData(X.data[trn], X), NetworkData(X.data[tst], X)))
+        push!(folds_, (D(data_[trn], X), D(data_[tst], X)))
 
 
     end
 
     # Return constructed kfold_ object
-    kfold_{D}(folds_)
+    kfold{D}(folds_)
 
 end
