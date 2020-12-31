@@ -1,5 +1,5 @@
 module TUM69
 
-include("tum_69//tum69_ops.jl"); export load_accel_data, load_image_data
-
+include("tum69//kfold_ops.jl"); export kfold_
+include("tum69//network_data.jl"); export NetworkData, iterate, length
 end

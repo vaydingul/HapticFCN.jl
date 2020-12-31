@@ -1,10 +1,10 @@
 export load_accel_data, load_image_data
 
 
-using Images: load, channelview, RGB, FixedPointNumbers, UInt8, Normed, ColorTypes
+using Images: load #, channelview, RGB, FixedPointNumbers, UInt8, Normed, ColorTypes
 using DelimitedFiles: readdlm
 
-function load_accel_data(filepath::String; mode::String="baseline")
+function load_accel_data(filepath::String; type="train", mode::String="basic")
 
     #= 
     This function execute following processes:
@@ -12,12 +12,12 @@ function load_accel_data(filepath::String; mode::String="baseline")
         - Especially, time-series acceleration signals
         
     Usage:
-    loaddata(data_directory; mode = "baseline")
+    loaddata(data_directory; mode = "basic")
 
     Input:
     filepath = It must point to where the data is situated
     mode = It determines the reading mode.
-        mode = "baseline"  => Fetch 1 file from each folder [ Memory issues :( ]
+        mode = "basic"  => Fetch 1 file from each folder [ Memory issues :( ]
         mode = "normal" => Fetch all data in each folder [ Full training ]
 
     Output:
@@ -28,18 +28,23 @@ function load_accel_data(filepath::String; mode::String="baseline")
     material_dict = Dictionary which maps material names to the integers =#
 
     ############# Preallocatzion of output arrays and dictionary ###############
-    X_accel_train = Array{Array{Float32,1},1}()
-    y_accel_train = Array{Int8,1}()
-    X_accel_test  = Array{Array{Float32,1},1}()
-    y_accel_test  = Array{Int8,1}()
+    # X_accel_train = Array{Array{Float32,1},1}()
+    # y_accel_train = Array{Int8,1}()
+    # X_accel_test  = Array{Array{Float32,1},1}()
+    # y_accel_test  = Array{Int8,1}()
+    # material_dict = Dict{String,Int8}()
+
+    train_data = Array{Tuple{String,Int8}}([])
+    test_data = Array{Tuple{String,Int8}}([])
     material_dict = Dict{String,Int8}()
+
     ############################################################################
 
 
     ftypes = ["train", "test"] # Folder type specification 1
     dtype = "accel" # Folder type specification 2
 
-    count = 0
+    count = 1 # Since, it is 1, no need to add 1 to output data ´y´during preprocessing
 
     #= 
         Below DISGUSTING for loop basically walks around all folders and reads
@@ -70,24 +75,26 @@ function load_accel_data(filepath::String; mode::String="baseline")
 
             for (ix2, file) in enumerate(files)
                     
-                mode == "baseline" && ix2 == 2 ? break : nothing 
+                mode == "basic" && ix2 == 2 ? break : nothing 
+                
                 full_file_path = joinpath(cum_data_path, file)
              
-                data = readdlm(full_file_path, '\n', Float32)
-                data = reshape(data, size(data, 1))
+                # data = readdlm(full_file_path, '\n', Float32)
+                # data = reshape(data, size(data, 1))
 
                 if ftype == "train"
-
-                    dtype == "accel"
-                    push!(X_accel_train, data)
-                    push!(y_accel_train, material_dict[folder])
+                    
+                    push!(train_data, (full_file_path, material_dict[folder]))
+                    # push!(X_accel_train, data)
+                    # push!(y_accel_train, material_dict[folder])
                         
                 end
 
                 if ftype == "test"
 
-                    push!(X_accel_test, data)
-                    push!(y_accel_test, material_dict[folder])
+                    push!(test_data, (full_file_path, material_dict[folder]))
+                    # push!(X_accel_test, data)
+                    # push!(y_accel_test, material_dict[folder])
                         
                 end
 
@@ -97,10 +104,20 @@ function load_accel_data(filepath::String; mode::String="baseline")
                    
     end
 
-    return X_accel_train, y_accel_train, X_accel_test, y_accel_test, material_dict
+    # Inverting the dictionary, to map materials based on integer values
+    material_dict = Dict(value => key for (key, value) in material_dict)
+    if type == "train"
+        return train_data, material_dict
+
+    elseif type == "test"
+        return test_data, material_dict
+
+    else
+        return vcat(train_data, test_data), material_dict
+    end
 end
 
-function load_image_data(filepath::String; mode::String="baseline")
+function load_image_data(filepath::String; type="train", mode::String="basic")
 
     #= 
     This function execute following processes:
@@ -108,12 +125,12 @@ function load_image_data(filepath::String; mode::String="baseline")
         - Especially camera images
         
     Usage:
-    loaddata(data_directory; mode = "baseline")
+    loaddata(data_directory; mode = "basic")
 
     Input:
     filepath = It must point to where the data is situated
     mode = It determines the reading mode.
-        mode = "baseline"  => Fetch 1 file from each folder [ Memory issues :( ]
+        mode = "basic"  => Fetch 1 file from each folder [ Memory issues :( ]
         mode = "normal" => Fetch all data in each folder [ Full training ]
 
     Output:
@@ -126,10 +143,14 @@ function load_image_data(filepath::String; mode::String="baseline")
 
     ############# Preallocatzion of output arrays and dictionary ###############
 
-    X_image_train = Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}() 
-    y_image_train = Array{Int8,1}()
-    X_image_test  = Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}()
-    y_image_test  = Array{Int8,1}()
+    # X_image_train = Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}() 
+    # y_image_train = Array{Int8,1}()
+    # X_image_test  = Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}()
+    # y_image_test  = Array{Int8,1}()
+    # material_dict = Dict{String,Int8}()
+
+    train_data = Array{Tuple{String,Int8}}([])
+    test_data = Array{Tuple{String,Int8}}([])
     material_dict = Dict{String,Int8}()
     ############################################################################
 
@@ -137,7 +158,7 @@ function load_image_data(filepath::String; mode::String="baseline")
     ftypes = ["train", "test"] # Folder type specification 1
     dtype = "image" # Folder type specification 2
 
-    count = 0
+    count = 1
 
     #= 
         Below DISGUSTING for loop basically walks around all folders and reads
@@ -168,25 +189,28 @@ function load_image_data(filepath::String; mode::String="baseline")
 
             for (ix2, file) in enumerate(files)
                     
-                mode == "baseline" && ix2 == 2 ? break : nothing 
+                mode == "basic" && ix2 == 2 ? break : nothing 
+                
                 full_file_path = joinpath(cum_data_path, file)
-
-                data = load(full_file_path)
-                    # data = channelview(data)
-                    # data = convert.(Float32, data)
-                    # data = reshape(data, (size(data, 2), size(data, 3), 3))
+                
+                # data = load(full_file_path)
+                # data = channelview(data)
+                # data = convert.(Float32, data)
+                # data = reshape(data, (size(data, 2), size(data, 3), 3))
                     
                 if ftype == "train"
-                      
-                    push!(X_image_train, data)
-                    push!(y_image_train, material_dict[folder])
+                    
+                    push!(train_data, (full_file_path, material_dict[folder]))
+                    # push!(X_image_train, data)
+                    # push!(y_image_train, material_dict[folder])
                         
                 end
 
                 if ftype == "test"
 
-                    push!(X_image_test, data)
-                    push!(y_image_test, material_dict[folder])
+                    push!(test_data, (full_file_path, material_dict[folder]))
+                    # push!(X_image_test, data)
+                    # push!(y_image_test, material_dict[folder])
 
                 end
 
@@ -196,5 +220,16 @@ function load_image_data(filepath::String; mode::String="baseline")
             
     end
 
-    return X_image_train, y_image_train, X_image_test, y_image_test, material_dict
+    # Inverting the dictionary, to map materials based on integer values
+    material_dict = Dict(value => key for (key, value) in material_dict)
+    if type == "train"
+        return train_data, material_dict
+
+    elseif type == "test"
+        return test_data, material_dict
+
+    else
+        return vcat(train_data, test_data), material_dict
+    end
 end
+    

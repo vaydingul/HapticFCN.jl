@@ -31,7 +31,7 @@ function process_accel_signal(X::Array{Array{Float32,1},1}, y::Array{Int8,1}; fr
 
     #X = process_accel_signal_X.(X; freq_count=freq_count, signal_count=signal_count, Fs=Fs, window_length=window_length, noverlap=noverlap)
     X = map(x -> process_accel_signal_X(x; freq_count=freq_count, signal_count=signal_count, Fs=Fs, window_length=window_length, noverlap=noverlap), X)
-    y .+= 1
+    #y .+= 1
     y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)]
     
     X = cat(X..., dims=4)
@@ -116,7 +116,7 @@ function augment_image(X, y, o...)
         
     # push!(X_new, X_temp...) # It applies the preprocessing to the all element
     
-    y .+= 1 # Add 1 to output to be able to adapt to Knet
+    #y .+= 1 # Add 1 to output to be able to adapt to Knet
     y_new = vcat([y for _ in 1:(n_ops + 1)]...)
     
     return X_new, y_new
@@ -149,7 +149,7 @@ function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},
 
 
     X = map(x->process_image_X(x; crop_size = crop_size), X)
-    y .+= 1 # Add 1 to output to be able to adapt to Knet
+    #y .+= 1 # Add 1 to output to be able to adapt to Knet
 
     # Since, the input data is splitted into parts, output data should be copied
     y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)] 

@@ -34,20 +34,16 @@ notify!(str) = run(`curl https://notify.run/fnx04zT7QmOlLLa6 -d $str`)
 # Array type decider 
 a_type(T) = (CUDA.functional() ? KnetArray{T} : Array{T})
 
-
-
 struct kfold
-    #=
+    #= 
 
-        K-FOLD cross validation seperator for the data
-
-    =#
-    folds::Array{Tuple{Data, Data}}
+        K-FOLD cross validation seperator for the data =#
+    folds::Array{Tuple{Data,Data}}
 
 end
 
 
-function kfold(X, y; fold = 10, minibatch_size = 10, atype = Array{Float32}, shuffle = true)
+function kfold(X, y; fold=10, minibatch_size=10, atype=Array{Float32}, shuffle=true)
     #= 
         General constructor for kfold struct
 
@@ -71,7 +67,7 @@ function kfold(X, y; fold = 10, minibatch_size = 10, atype = Array{Float32}, shu
 
 
 
-    folds_ = Array{Tuple{Data, Data}}([])
+    folds_ = Array{Tuple{Data,Data}}([])
     # Get size of the input data
     n = size(X)[end]
     # We need to consider about sample size
@@ -99,8 +95,8 @@ function kfold(X, y; fold = 10, minibatch_size = 10, atype = Array{Float32}, shu
         u_test = k * fold_size
 
         # Minibatching operation for each folding set
-        dtst = minibatch(X2[:,[l_test:u_test...]], y2[: ,[l_test:u_test...]], minibatch_size; xtype = atype, shuffle = shuffle, xsize = (size(X)[1:end-1]..., fold_size), ysize = (size(y)[1:end-1]..., fold_size))
-        dtrn = minibatch(X2[:,[1:(l_test-1)...,(u_test+1):end...]], y2[: ,[1:(l_test-1)...,(u_test+1):end...]], minibatch_size; xtype = atype, shuffle = shuffle, xsize = (size(X)[1:end-1]..., fold_size), ysize = (size(y)[1:end-1]..., fold_size))
+        dtst = minibatch(X2[:,[l_test:u_test...]], y2[: ,[l_test:u_test...]], minibatch_size; xtype=atype, shuffle=shuffle, xsize=(size(X)[1:end - 1]..., fold_size), ysize=(size(y)[1:end - 1]..., fold_size))
+        dtrn = minibatch(X2[:,[1:(l_test - 1)...,(u_test + 1):end...]], y2[: ,[1:(l_test - 1)...,(u_test + 1):end...]], minibatch_size; xtype=atype, shuffle=shuffle, xsize=(size(X)[1:end - 1]..., fold_size), ysize=(size(y)[1:end - 1]..., fold_size))
         
         push!(folds_, (dtrn, dtst))
 
@@ -118,10 +114,9 @@ end
 
 
 
+
+
 #### NONACTIVE FUNCTIONS ####
-
-
-
 
 #using PyPlot: specgram, xlabel, ylabel
 #using PyCall: pyimport
