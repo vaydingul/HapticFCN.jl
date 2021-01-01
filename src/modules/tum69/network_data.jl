@@ -63,7 +63,7 @@ function NetworkData(main_path, type; data_type="train", read_type::String="basi
     # kfold_size = kfold ? kfold_size : nothing
 
 
-    read_count = floor(Int, length(data) / read_rate) # Number of data points to read each time
+    read_count = floor(Int, length(data) * read_rate) # Number of data points to read each time
     
     # refresh_rate = floor(Int, read_count / batchsize)
 
