@@ -75,7 +75,7 @@ end
 
 function NetworkData(data, nd::NetworkData)
 
-    read_count = floor(Int, length(data) / nd.read_rate) # Number of data points to read each time
+    read_count = floor(Int, length(data) * nd.read_rate) # Number of data points to read each time
 
     return NetworkData(data, nd.X_, nd.y_, nd.type, nd.material_dict, nd.shuffle, nd.read_rate, read_count, nd.batchsize, nd.atype)
 
@@ -140,11 +140,11 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     if s3
 
-        y = vcat([nd.data[k][2] for k in s1+1:nd.read_count]...)
+        y = vcat([nd.data[k][2] for k in s1+1:s1+1+nd.read_count]...)
         println("Data reading...")
         if nd.type == "image"
 
-            X = [load(nd.data[k][1]) for k in s1+1:nd.read_count]
+            X = [load(nd.data[k][1]) for k in s1+1:s1+1+nd.read_count]
             p1 = FlipX()
             p2 = FlipY()
             p3 = FlipX() |> FlipY()
