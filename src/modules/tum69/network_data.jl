@@ -116,14 +116,16 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     # When we porocess an inout , it does not result in one-to-one relationship.
     # One inout may output as multiple modified version.
     # This state will check this situation.
-    if nd.X_ !== nothing
+    if nd.X_ !== nothingF
         next_s2 = s2 + min(nd.batchsize, length(nd.X_) - s2)
 
     # This state is responsible for the data samples, which is one-to-one inherently.
-        next_s1 = next_s2 == size(nd.X_, 4) ? s1 + nd.read_count : s1 + 0
+        next_s1 = next_s2 == length(nd.y_) ? s1 + nd.read_count : s1 + 0
 
-        next_s3 = next_s2 == size(nd.X_, 4) ? true : false
+        next_s3 = next_s2 == length(nd.y_) ? true : false
+
     else
+
         next_s2 = s2 + nd.batchsize
 
         # This state is responsible for the data samples, which is one-to-one inherently.
@@ -161,7 +163,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     # ids = [i + 1:nexti]
 
-    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2 + 1:next_s2])
+    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2+1:next_s2])
     ybatch = nd.y_[s2 + 1:next_s2]
 
 
