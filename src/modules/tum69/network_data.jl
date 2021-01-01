@@ -100,6 +100,68 @@ function length(nd::NetworkData)
     =#
 end
 
+
+
+function iterate(nd::NetworkData, state = (0, 0, true))
+
+    s1, s2, s3 = state
+
+
+    if length(nd.data) - s1 <= 0
+
+        return nothing
+
+    end
+
+        
+    # When we porocess an inout , it does not result in one-to-one relationship.
+    # One inout may output as multiple modified version.
+    # This state will check this situation.
+    next_s2 = s2 + min(nd.batchsize, length(nd.X_) - s2)
+
+    # This state is responsible for the data samples, which is one-to-one inherently.
+    next_s1 += next_s2 == length(nd.X_) ? nd.read_count : 0
+
+    next_s3 = next_s2 == length(nd.X_) ? true : false
+
+    next_state = (next_s1, next_s2, next_s3)
+
+    nexti = i + min(nd.batchsize,length(nd.data) - i, nd.read_count - (i % nd.read_count))
+
+    if s3
+        y = vcat([nd.data[k][2] for k in 1 + s1:next_s1]...)
+        println("Data reading...")
+        if nd.type == "image"
+
+            X = [load(nd.data[k][1]) for k in 1 + s1:next_s1]
+            p1 = FlipX()
+            p2 = FlipY()
+            p3 = FlipX() |> FlipY()
+            X, y = augment_image(X, y, p1, p2, p3)
+            # Apply preprocessing on the images
+            nd.X_, nd.y_ = process_image(X, y)
+    
+        else
+    
+            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in 1 + s1:next_s1]
+            nd.X_, nd.y_ = process_accel_signal(X, y)
+
+        end
+
+    end
+
+    #ids = [i + 1:nexti]
+
+    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2+1:next_s2])
+    ybatch = nd.y_[s2+1:next_s2]
+
+
+    return ((Xbatch, ybatch), next_state)
+    
+end
+
+
+
 #=
 
 function iterate(nd::NetworkData, i=0)
@@ -140,48 +202,3 @@ function iterate(nd::NetworkData, i=0)
 end
 
 =#
-
-function iterate(nd::NetworkData, i = 0)
-
-    if length(nd.data) - i <= 0
-
-        return nothing
-
-    end
-
-
-    nexti = i + min(nd.batchsize,length(nd.data) - i, nd.read_count - (i % nd.read_count))
-
-
-
-    if i % nd.read_count == 0
-        y = vcat([nd.data[k][2] for k in 1:nd.read_count]...)
-        println("Data reading...")
-        if nd.type == "image"
-
-            X = [load(nd.data[k][1]) for k in 1:nd.read_count]
-            p1 = FlipX()
-            p2 = FlipY()
-            p3 = FlipX() |> FlipY()
-            X, y = augment_image(X, y, p1, p2, p3)
-            # Apply preprocessing on the images
-            nd.X_, nd.y_ = process_image(X, y)
-    
-        else
-    
-            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in 1:nd.read_count]
-            nd.X_, nd.y_ = process_accel_signal(X, y)
-
-        end
-
-    end
-
-    #ids = [i + 1:nexti]
-
-    Xbatch = convert(nd.atype, nd.X_[:,:,:,i+1:nexti])
-    ybatch = nd.y_[i+1:nexti]
-
-
-    return ((Xbatch, ybatch), nexti)
-    
-end

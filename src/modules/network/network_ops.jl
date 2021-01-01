@@ -196,10 +196,10 @@ function train_epoch!(model, dtrn, dtst; progress_bar=true, fig=true, info=true,
 
     if progress_bar
         result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
-                for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr)), length(dtrn)));
+                for x in takenth(progress(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr)), length(dtrn) * epoch));
     else
         result = ((model(dtrn), model(dtst), 1.0 - model.accuracy_fnc(model; data=dtrn), 1.0 - model.accuracy_fnc(model; data=dtst)) 
-                for x in takenth(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr), length(dtrn)));
+                for x in takenth(model.optimizer_type(model, ncycle(dtrn, epoch), lr=model.lr), length(dtrn) * epoch));
     end
 
     result = reshape(collect(Float32, flatten(result)), (4, :));
