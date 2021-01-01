@@ -67,14 +67,21 @@ function NetworkData(data, nd::NetworkData)
 
 end
 
-length(nd::NetworkData) = length(nd.data)
+function length(nd::NetworkData) 
+    n = length(nd.data) / nd.batchsize
+    ceil(Int,n) 
+end
 
 function iterate(nd::NetworkData, i=0)
 
-    if length(nd) - i <= nd.batchsize
+    if length(nd.data) - i <= 0
+
         return nothing
+
     end
-    nexti = i + nd.batchsize
+
+    nexti = min(i + nd.batchsize, length(nd.data))
+    #nexti = i + nd.batchsize
 
     y = vcat([nd.data[k][2] for k in i + 1:nexti]...)
 

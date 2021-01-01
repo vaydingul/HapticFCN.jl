@@ -267,9 +267,7 @@ function train_generic!(model, dtrn, dtst; optimizer_type = nothing, lr = nothin
     opt_ = optimizer_type === nothing ? model.optimizer_type : optimizer_type
     lr_ = lr === nothing ? model.lr : lr
 
-    println("Training started!")
-    progress(opt_(model, dtrn, lr= lr_))
-    println("Training finished!")
+    opt_(model, dtrn, lr= lr_)
 
 
     return model(dtrn), model(dtst), model.accuracy_fnc(model; data=dtrn), model.accuracy_fnc(model; data=dtst)

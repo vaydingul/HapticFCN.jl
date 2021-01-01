@@ -39,7 +39,7 @@ function kfold(X::D; fold=10) where D
 
     folds_ = Array{Tuple{D, D}}([])
     # Get size of the input data
-    n = length(X)[end]
+    n = length(X.data)#[end]
     # We need to consider about sample size
 
     # Get permuted form of the indexes
@@ -58,7 +58,7 @@ function kfold(X::D; fold=10) where D
         u_test = k * fold_size
 
         tst = [l_test:u_test...]
-        trn = [1:(l_test - 1)...,(u_test + 1):length(X)...]
+        trn = [1:(l_test - 1)...,(u_test + 1):length(X.data)...]
         # Minibatching operation for each folding set
         push!(folds_, (D(data_[trn], X), D(data_[tst], X)))
 
