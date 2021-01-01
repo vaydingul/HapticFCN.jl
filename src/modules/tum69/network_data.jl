@@ -18,8 +18,18 @@ struct NetworkData
     # concat_train_test::Bool # Is the concatenation of the train and test data required? (When k-fold is being applied)
 
     data::Array{Tuple{String,Int8}} # Paths of the individual data point
-    type::String # Whether acceleration or image ==> "accel", "image"
 
+    X_ # Temporary data fields to be stored in CPU
+    y_ # Temporary data fields to be stored in CPU
+
+    type::String # Whether acceleration or image ==> "accel", "image"
+    material_dict::Dict{Int8,String}
+    shuffle::Bool
+    read_rate
+    read_count::Int # Whether all data will be read in once or will be iterated through
+    batchsize::Int # Batchsize during training
+    atype
+   
     # Class of the individual data point, since it is Int value, it can be stored as variable directly
 
     # These two for the case of concatenation is not desired
@@ -27,16 +37,13 @@ struct NetworkData
     # data_test::Array{Tuple{String,Int8}}
     
     # Material dictionary
-    material_dict::Dict{Int8,String}
-    shuffle::Bool
-    read_them_all::Bool # Whether all data will be read in once or will be iterated through
+
     # kfold::Bool # whether K-FOLD cross validation will be applied or not
     # kfold_size::Int # How many folds will be included in the cross validation ?
-    batchsize::Int # Batchsize during training
-    atype
+
 end
 
-function NetworkData(main_path, type; data_type="train", read_type::String="basic",shuffle::Bool=true, read_them_all::Bool=false,  batchsize::Int=10, atype=Array{Float32})
+function NetworkData(main_path, type; data_type="train", read_type::String="basic",shuffle::Bool=true, read_rate=1.0,  batchsize::Int=10, atype=Array{Float32})
     #= 
          Custom constructor =#
 
@@ -54,8 +61,12 @@ function NetworkData(main_path, type; data_type="train", read_type::String="basi
 
     # data, train_data, test_data = concat_train_test ? (vcat(train_data, test_data), nothing, nothing) : (nothing, train_data, test_data)
     # kfold_size = kfold ? kfold_size : nothing
-    
-    NetworkData(data, type, material_dict, shuffle, read_them_all, batchsize, atype)
+
+
+    read_count = floor(Int, length(data) / read_rate) # Number of data points to read each time
+    refresh_rate = floor(Int, read_count / batchsize)
+
+    NetworkData(data, X, y, type, material_dict, shuffle,read_rate, read_count , batchsize, atype)
 
 
 end
@@ -63,14 +74,32 @@ end
 
 function NetworkData(data, nd::NetworkData)
 
-    return NetworkData(data, nd.type, nd.material_dict, nd.shuffle, nd.read_them_all, nd.batchsize, nd.atype)
+    read_count = floor(Int, length(data) / nd.read_rate) # Number of data points to read each time
+
+    return NetworkData(data, nd.X_, nd.y_, nd.type, nd.material_dict, nd.shuffle, nd.read_rate, read_count, nd.batchsize, nd.atype)
 
 end
 
 function length(nd::NetworkData) 
+    l = 0
+
+    part_cnt, rem_cnt = divrem(length(nd.data), nd.read_count)
+    
+    l = ceil(Int, nd.read_count / nd.batchsize) * part_cnt
+    
+    l += ceil(Int, rem_cnt / nd.batchsize)
+
+    return l
+
+
+
+    #=
     n = length(nd.data) / nd.batchsize
     ceil(Int,n) 
+    =#
 end
+
+#=
 
 function iterate(nd::NetworkData, i=0)
 
@@ -106,5 +135,53 @@ function iterate(nd::NetworkData, i=0)
     X = convert(nd.atype, X)
     
     return ((X, y), nexti)
+    
+end
+
+=#
+
+function iterate(nd::NetworkData, i = 0)
+
+    if length(nd.data) - i <= 0
+
+        return nothing
+
+    end
+
+
+    nexti = i + min(nd.batchsize,length(nd.data) - i, nd.read_count - (i % nd.read_count))
+
+
+
+    if i % nd.read_count == 0
+
+        y = vcat([nd.data[k][2] for k in 1:nd.read_count]...)
+
+        if nd.type == "image"
+
+            X = [load(nd.data[k][1]) for k in 1:nd.read_count]
+            p1 = FlipX()
+            p2 = FlipY()
+            p3 = FlipX() |> FlipY()
+            X, y = augment_image(X, y, p1, p2, p3)
+            # Apply preprocessing on the images
+            nd.X_, nd.y_ = process_image(X, y)
+    
+        else
+    
+            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in 1:nd.read_count]
+            nd.X_, nd.y_ = process_accel_signal(X, y)
+
+        end
+
+    end
+
+    #ids = [i + 1:nexti]
+
+    Xbatch = convert(nd.atype, nd.X_[:,:,:,i+1:nexti])
+    ybatch = nd.y_[i+1:nexti]
+
+
+    return ((Xbatch, ybatch), nexti)
     
 end
