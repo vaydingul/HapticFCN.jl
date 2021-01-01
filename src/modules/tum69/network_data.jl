@@ -66,7 +66,7 @@ function NetworkData(main_path, type; data_type="train", read_type::String="basi
     read_count = floor(Int, length(data) / read_rate) # Number of data points to read each time
     refresh_rate = floor(Int, read_count / batchsize)
 
-    NetworkData(data, X, y, type, material_dict, shuffle,read_rate, read_count , batchsize, atype)
+    NetworkData(data, nothing, nothing, type, material_dict, shuffle,read_rate, read_count , batchsize, atype)
 
 
 end
