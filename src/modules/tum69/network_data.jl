@@ -65,9 +65,9 @@ function NetworkData(main_path, type; data_type="train", read_type::String="basi
 
     read_count = floor(Int, length(data) / read_rate) # Number of data points to read each time
     
-    #refresh_rate = floor(Int, read_count / batchsize)
+    # refresh_rate = floor(Int, read_count / batchsize)
 
-    NetworkData(data, nothing, nothing, type, material_dict, shuffle,read_rate, read_count , batchsize, atype)
+    NetworkData(data, nothing, nothing, type, material_dict, shuffle, read_rate, read_count, batchsize, atype)
 
 
 end
@@ -94,15 +94,14 @@ function length(nd::NetworkData)
 
 
 
-    #=
+    #= 
     n = length(nd.data) / nd.batchsize
-    ceil(Int,n) 
-    =#
+    ceil(Int,n) =#
 end
 
 
 
-function iterate(nd::NetworkData, state = (0, 0, true))
+function iterate(nd::NetworkData, state=(0, 0, true))
 
     s1, s2, s3 = state
 
@@ -117,18 +116,28 @@ function iterate(nd::NetworkData, state = (0, 0, true))
     # When we porocess an inout , it does not result in one-to-one relationship.
     # One inout may output as multiple modified version.
     # This state will check this situation.
-    next_s2 = s2 + min(nd.batchsize, length(nd.X_) - s2)
+    if nd.X_ !== nothing
+        next_s2 = s2 + min(nd.batchsize, length(nd.X_) - s2)
 
     # This state is responsible for the data samples, which is one-to-one inherently.
-    next_s1 += next_s2 == length(nd.X_) ? nd.read_count : 0
+        next_s1 += next_s2 == length(nd.X_) ? nd.read_count : 0
 
-    next_s3 = next_s2 == length(nd.X_) ? true : false
+        next_s3 = next_s2 == length(nd.X_) ? true : false
+    else
+        next_s2 = s2 + nd.batchsize
 
+        # This state is responsible for the data samples, which is one-to-one inherently.
+        next_s1 +=  0
+    
+        next_s3 = false
+
+    end
     next_state = (next_s1, next_s2, next_s3)
 
-    nexti = i + min(nd.batchsize,length(nd.data) - i, nd.read_count - (i % nd.read_count))
+    #nexti = i + min(nd.batchsize, length(nd.data) - i, nd.read_count - (i % nd.read_count))
 
     if s3
+
         y = vcat([nd.data[k][2] for k in 1 + s1:next_s1]...)
         println("Data reading...")
         if nd.type == "image"
@@ -150,10 +159,10 @@ function iterate(nd::NetworkData, state = (0, 0, true))
 
     end
 
-    #ids = [i + 1:nexti]
+    # ids = [i + 1:nexti]
 
-    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2+1:next_s2])
-    ybatch = nd.y_[s2+1:next_s2]
+    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2 + 1:next_s2])
+    ybatch = nd.y_[s2 + 1:next_s2]
 
 
     return ((Xbatch, ybatch), next_state)
@@ -162,7 +171,7 @@ end
 
 
 
-#=
+#= 
 
 function iterate(nd::NetworkData, i=0)
 
@@ -199,6 +208,4 @@ function iterate(nd::NetworkData, i=0)
     
     return ((X, y), nexti)
     
-end
-
-=#
+end =#
