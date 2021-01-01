@@ -134,7 +134,7 @@ function GCN(i_dim, o_dim, kernels; hidden=[], optimizer_type=adam, lr=1e-4, los
     
 end
 
-function (gcn::GCN)(x::AbstractArray)
+function (gcn::GCN)(x::Union{AbstractArray, KnetArray})
         # Feed-forward through MLP model (whole architecture)
     for l in gcn.layers
         
