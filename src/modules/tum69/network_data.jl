@@ -154,10 +154,9 @@ function iterate(nd::NetworkData, i = 0)
 
 
 
-    if i % nd.read_count == 0 && nd.X_ !== nothing
-
+    if i % nd.read_count == 0
         y = vcat([nd.data[k][2] for k in 1:nd.read_count]...)
-
+        println("Data reading...")
         if nd.type == "image"
 
             X = [load(nd.data[k][1]) for k in 1:nd.read_count]
