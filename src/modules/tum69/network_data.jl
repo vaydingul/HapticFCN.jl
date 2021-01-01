@@ -8,7 +8,7 @@ using Images
 using DelimitedFiles
 import Base: length, iterate, vcat
 
-struct NetworkData
+mutable struct NetworkData
 
     ### Constructor inputs
     # main_path::String # Main path of the data
