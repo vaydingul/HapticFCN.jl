@@ -1,9 +1,9 @@
-include("../src/modules/TUM69.jl")
-include("../src/modules/Preprocess.jl")
-include("../src/modules/Network.jl")
-include("../src/modules/Utils.jl")
-include("../src/modules/Model.jl")
-include("../src/modules/Metrics.jl")
+#include("../src/modules/TUM69.jl")
+#include("../src/modules/Preprocess.jl")
+#include("../src/modules/Network.jl")
+#include("../src/modules/Utils.jl")
+#include("../src/modules/Model.jl")
+#include("../src/modules/Metrics.jl")
 
 ## Third party packages
 using Knet: KnetArray, adam, relu, minibatch

@@ -3,10 +3,10 @@ packages = ["Knet", "AutoGrad", "Random", "Test", "MLDatasets", "CUDA", "Plots",
             "IterTools", "StatsBase", "DSP", "Images", "DelimitedFiles", "MultivariateStats", "PyPlot", "PyCall"];
 Pkg.add(packages);
 
-include("../src/modules/TUM69.jl")
-include("../src/modules/Preprocess.jl")
-include("../src/modules/Network.jl")
-include("../src/modules/Utils.jl")
+#include("../src/modules/TUM69.jl")
+#include("../src/modules/Preprocess.jl")
+#include("../src/modules/Network.jl")
+#include("../src/modules/Utils.jl")
 ## Third party packages
 using Knet: KnetArray, adam, relu, minibatch
 using CUDA: CuArray

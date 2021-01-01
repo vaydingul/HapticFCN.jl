@@ -1,8 +1,8 @@
 export HapticNet
 
-include("..//network//gcn.jl")
-using Knet, JLD2
+include("gcn.jl")
 
+#using Knet, JLD2
 
 struct HapticNet
     #=
@@ -12,7 +12,7 @@ struct HapticNet
     =#
 
     model::GCN # GCN model that it wraps
-
+    
 end
 
 function HapticNet(s::String)
@@ -47,3 +47,5 @@ function HapticNet(; i = (50, 300, 1), o = 69, lrn = true, atype = Array{Float32
 
     return HapticNet(model)
 end
+
+

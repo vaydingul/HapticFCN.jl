@@ -1,11 +1,11 @@
 export process_accel_signal, process_accel_signal_X, process_image, process_image_X, split_into_patches, augment_image, augment_image_X
 
-include("..//utils//util_ops.jl")
 
 using TiledIteration
 using Images: channelview, imresize, RGB, FixedPointNumbers, UInt8, Normed
 using DSP: spectrogram, hamming, power, time, freq
 using Augmentor
+using MultivariateStats: fit, PCA, transform
 
 function process_accel_signal(X::Array{Array{Float32,1},1}, y::Array{Int8,1}; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
     #= 
@@ -78,6 +78,30 @@ function process_accel_signal_X(acc_signal::Array{Float32,1}; freq_count=50, sig
         return Pxx
     end
 end
+
+function extract_PCA(data; max_out_dim = 50)
+    #=
+    This function execute following processes:
+        - It performs PCA on the given data
+
+    Usage:
+        plot_spectrogram(data; fs)
+
+    Input:
+        data = Data to be performed PCA
+        max_out_dim = Maximum number of property to be extracted from PCA
+
+    Output:
+        data_transformed = Projected version of the data
+    =#
+
+    M = fit(PCA, data; maxoutdim = max_out_dim, pratio = 1.0 ) # PCA application
+    data_transformed = transform(M, data) # Data projection
+
+    return data_transformed
+
+end
+
 
 
 function augment_image(X, y, o...)

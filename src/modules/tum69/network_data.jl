@@ -1,7 +1,7 @@
 export iterate, NetworkData, length
 
 include("data_read_ops.jl")
-include("..//preprocess//preprocess_ops.jl")
+include("preprocess_ops.jl")
 
 
 using Images

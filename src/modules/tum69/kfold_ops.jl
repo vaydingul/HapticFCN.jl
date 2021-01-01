@@ -1,5 +1,7 @@
 export kfold
 
+using Random
+
 struct kfold{T} 
     #= 
 

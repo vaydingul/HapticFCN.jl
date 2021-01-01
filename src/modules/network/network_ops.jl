@@ -1,10 +1,9 @@
-export LR_norm, nll4, accuracy4, _accuracy4, train_epoch!, train_generic!
+export LR_norm, nll4, accuracy4, _accuracy4, train_epoch!, train_generic!, max_vote
 
-using Knet, Plots
-using Knet: Data
-
-using IterTools: ncycle, takenth
-using Base.Iterators: flatten
+#using Knet: Data
+#using Knet, Plots
+#using IterTools: ncycle, takenth
+#using Base.Iterators: flatten
 
 
 function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype=Array{Float32}, el_type=Float32) where T
@@ -127,7 +126,7 @@ end
 
 
 
-function accuracy4(model; data::Data)
+function accuracy4(model; data)
 
     #= 
     This function execute following processes:
@@ -268,10 +267,12 @@ function train_generic!(model, dtrn, dtst; optimizer_type = nothing, lr = nothin
     opt_ = optimizer_type === nothing ? model.optimizer_type : optimizer_type
     lr_ = lr === nothing ? model.lr : lr
 
-    opt_(model, dtrn, lr= lr_);
+    println("Training started!")
+    progress(opt_(model, dtrn, lr= lr_))
+    println("Training finished!")
 
 
-    return model(dtrn), model(dtst), model.accuracy_fnc(dtrn), model.accuracy_fnc(dtst)
+    return model(dtrn), model(dtst), model.accuracy_fnc(model; data=dtrn), model.accuracy_fnc(model; data=dtst)
 
 end
 

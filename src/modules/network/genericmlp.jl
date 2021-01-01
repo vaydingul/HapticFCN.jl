@@ -1,9 +1,8 @@
 export GenericMLP
 include("dense.jl")
-include("..//tum69//network_data.jl")
 
-using Knet, Statistics
-using Knet: Data
+#using Knet, Statistics
+#using Knet: Data
 
 
 struct GenericMLP
@@ -72,8 +71,14 @@ function (gmlp::GenericMLP)(x, y)
     
 end
 
-function (gmlp::GenericMLP)(data::Union{Data, NetworkData})
+function (gmlp::GenericMLP)(data::Data) 
     # Loss calculation for whole epoch/dataset
-    return mean(gmlp(x, y) for (x, y) in data)
-    
+return mean(gcn(x, y) for (x, y) in data)
 end
+
+#=
+function (gmlp::GenericMLP)(data::NetworkData) 
+    # Loss calculation for whole epoch/dataset
+return mean(gcn(x, y) for (x, y) in data)
+end
+=#

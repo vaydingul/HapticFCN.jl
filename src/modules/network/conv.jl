@@ -1,6 +1,6 @@
 export Conv
 
-using Knet
+#using Knet
 include("network_ops.jl")
 
 
@@ -52,3 +52,5 @@ function (c::Conv)(x)
 
 
 end
+
+
