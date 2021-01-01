@@ -64,7 +64,8 @@ function NetworkData(main_path, type; data_type="train", read_type::String="basi
 
 
     read_count = floor(Int, length(data) / read_rate) # Number of data points to read each time
-    refresh_rate = floor(Int, read_count / batchsize)
+    
+    #refresh_rate = floor(Int, read_count / batchsize)
 
     NetworkData(data, nothing, nothing, type, material_dict, shuffle,read_rate, read_count , batchsize, atype)
 
@@ -153,7 +154,7 @@ function iterate(nd::NetworkData, i = 0)
 
 
 
-    if i % nd.read_count == 0
+    if i % nd.read_count == 0 && nd.X_ !== nothing
 
         y = vcat([nd.data[k][2] for k in 1:nd.read_count]...)
 
