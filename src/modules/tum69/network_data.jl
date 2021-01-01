@@ -125,7 +125,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
         next_s3 = next_s2 == length(nd.y_) ? true : false
 
     else
-
+        println(s2)
         next_s2 = s2 + nd.batchsize
 
         # This state is responsible for the data samples, which is one-to-one inherently.
