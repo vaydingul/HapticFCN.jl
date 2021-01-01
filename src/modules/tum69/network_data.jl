@@ -138,11 +138,11 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     if s3
 
-        y = vcat([nd.data[k][2] for k in s1+1:next_s1]...)
+        y = vcat([nd.data[k][2] for k in s1+1:nd.read_count]...)
         println("Data reading...")
         if nd.type == "image"
 
-            X = [load(nd.data[k][1]) for k in s1+1:next_s1]
+            X = [load(nd.data[k][1]) for k in s1+1:nd.read_count]
             p1 = FlipX()
             p2 = FlipY()
             p3 = FlipX() |> FlipY()
@@ -152,7 +152,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     
         else
     
-            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in s1+1:next_s1]
+            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in s1+1:nd.read_count]
             nd.X_, nd.y_ = process_accel_signal(X, y)
 
         end
