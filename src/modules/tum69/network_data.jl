@@ -117,7 +117,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     # One inout may output as multiple modified version.
     # This state will check this situation.
     if nd.X_ !== nothing
-        next_s2 = s2 + min(nd.batchsize, length(nd.X_) - s2)
+        next_s2 = s2 + min(nd.batchsize, length(nd.y_) - s2)
 
     # This state is responsible for the data samples, which is one-to-one inherently.
         next_s1 = next_s2 == length(nd.y_) ? s1 + nd.read_count : s1 + 0
