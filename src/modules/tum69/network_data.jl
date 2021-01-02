@@ -124,8 +124,9 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
         next_s3 = next_s2 == length(nd.y_) ? true : false
 
+        
+
     else
-        println(s2)
         next_s2 = s2 + nd.batchsize
 
         # This state is responsible for the data samples, which is one-to-one inherently.
@@ -135,7 +136,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     end
     next_state = (next_s1, next_s2, next_s3)
-
+    println.([state, next_state, length(nd.y_), ])
     #nexti = i + min(nd.batchsize, length(nd.data) - i, nd.read_count - (i % nd.read_count))
 
     if s3
