@@ -131,7 +131,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
         next_s2 = s2 + nd.batchsize
 
         # This state is responsible for the data samples, which is one-to-one inherently.
-        next_s1 = s1 +  0
+        next_s1 = s1 +  nd.read_count
     
         next_s3 = false
 
