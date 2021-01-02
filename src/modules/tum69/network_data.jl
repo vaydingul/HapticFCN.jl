@@ -136,7 +136,6 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     end
     next_state = (next_s1, next_s2, next_s3)
-    println.([state, next_state, length(nd.y_), ])
     #nexti = i + min(nd.batchsize, length(nd.data) - i, nd.read_count - (i % nd.read_count))
 
     if s3
@@ -166,6 +165,8 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     Xbatch = convert(nd.atype, nd.X_[:,:,:,s2+1:next_s2])
     ybatch = nd.y_[s2 + 1:next_s2]
+
+    println.([state, next_state, length(nd.y_)])
 
 
     return ((Xbatch, ybatch), next_state)
