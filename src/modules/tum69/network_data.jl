@@ -123,7 +123,8 @@ function iterate(nd::NetworkData, state=(0, 0, true))
         next_s2 = s2 + min(nd.batchsize, ps - s2)
 
         # This state is responsible for the data samples, which is one-to-one inherently.
-        next_s1 = next_s2 == ps ? min(s1 + nd.read_count, length(nd.data)) : s1 + 0
+        next_s1 = s3 ? min(s1 + nd.read_count, length(nd.data)) : s1 + 0
+        #next_s1 = next_s2 == ps && s3 ? min(s1 + nd.read_count, length(nd.data)) : s1 + 0
 
         next_s3 = next_s2 == ps ? true : false
 
