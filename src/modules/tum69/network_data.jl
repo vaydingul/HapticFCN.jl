@@ -108,7 +108,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     if nd.y_ !== nothing
 
-        if (length(nd.data) - s1 <= 0) && (length(nd.y_) - s2)
+        if (length(nd.data) - s1 <= 0) && (length(nd.y_) - s2 <= 0)
 
             return nothing
     
