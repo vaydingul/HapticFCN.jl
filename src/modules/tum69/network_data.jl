@@ -123,7 +123,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
         next_s2 = s2 + min(nd.batchsize, ps - s2)
 
         # This state is responsible for the data samples, which is one-to-one inherently.
-        next_s1 = next_s2 == ps ? s1 + nd.read_count : s1 + 0
+        next_s1 = next_s2 == ps ? min(s1 + nd.read_count, length(nd.data)) : s1 + 0
 
         next_s3 = next_s2 == ps ? true : false
 
@@ -137,15 +137,15 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     end
     next_state = (next_s1, next_s2, next_s3)
-    #nexti = i + min(nd.batchsize, length(nd.data) - i, nd.read_count - (i % nd.read_count))
+    # nexti = i + min(nd.batchsize, length(nd.data) - i, nd.read_count - (i % nd.read_count))
 
     if s3
 
-        y = vcat([nd.data[k][2] for k in s1+1:s1+1+nd.read_count]...)
+        y = vcat([nd.data[k][2] for k in s1 + 1:next_s1]...)
         println("Data reading...")
         if nd.type == "image"
 
-            X = [load(nd.data[k][1]) for k in s1+1:s1+1+nd.read_count]
+            X = [load(nd.data[k][1]) for k in s1 + 1:next_s1]
             p1 = FlipX()
             p2 = FlipY()
             p3 = FlipX() |> FlipY()
@@ -155,7 +155,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     
         else
     
-            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in s1+1:nd.read_count]
+            X = [vec(readdlm(nd.data[k][1], '\n', Float32)) for k in s1 + 1:next_s1]
             nd.X_, nd.y_ = process_accel_signal(X, y)
 
         end
@@ -164,7 +164,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
 
     # ids = [i + 1:nexti]
 
-    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2+1:next_s2])
+    Xbatch = convert(nd.atype, nd.X_[:,:,:,s2 + 1:next_s2])
     ybatch = nd.y_[s2 + 1:next_s2]
 
     println.([state, next_state, length(nd.y_)])
