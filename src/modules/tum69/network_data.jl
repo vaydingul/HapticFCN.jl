@@ -106,14 +106,14 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     s1, s2, s3 = state
 
 
-    if length(nd.data) - s1 <= 0
-
-        return nothing
-
-    end
-
-        
     if nd.y_ !== nothing
+
+        if (length(nd.data) - s1 <= 0) && (length(nd.y_) - s2)
+
+            return nothing
+    
+        end
+
         s2 = s2 % length(nd.y_)
         ps = length(nd.y_)
 
