@@ -113,16 +113,19 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     end
 
         
-    # When we porocess an inout , it does not result in one-to-one relationship.
-    # One inout may output as multiple modified version.
-    # This state will check this situation.
     if nd.y_ !== nothing
-        next_s2 = (s2 + min(nd.batchsize, length(nd.y_) - s2)) % length(nd.y_)
+        s2 = s2 % length(nd.y_)
+        ps = length(nd.y_)
 
-    # This state is responsible for the data samples, which is one-to-one inherently.
-        next_s1 = next_s2 == 0 ? s1 + nd.read_count : s1 + 0
+        # When we porocess an inout , it does not result in one-to-one relationship.
+        # One inout may output as multiple modified version.
+        # This state will check this situation.
+        next_s2 = s2 + min(nd.batchsize, ps - s2)
 
-        next_s3 = next_s2 == 0 ? true : false
+        # This state is responsible for the data samples, which is one-to-one inherently.
+        next_s1 = next_s2 == ps ? s1 + nd.read_count : s1 + 0
+
+        next_s3 = next_s2 == ps ? true : false
 
     else
         next_s2 = s2 + nd.batchsize
