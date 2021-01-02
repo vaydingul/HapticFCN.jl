@@ -82,6 +82,14 @@ function NetworkData(data, nd::NetworkData)
 end
 
 function length(nd::NetworkData) 
+    part = ceil(Int, length(nd.data) / nd.read_count)
+    if nd.X_ !== nothing
+        each_part = ceil(Int, length(nd.y_) / nd.batchsize)
+        return part * each_part
+    else
+        return part
+    end
+    #=
     l = 0
 
     part_cnt, rem_cnt = divrem(length(nd.data), nd.read_count)
@@ -91,14 +99,13 @@ function length(nd::NetworkData)
     l += ceil(Int, rem_cnt / nd.batchsize)
 
     return l
-
+    =#
 
 
     #= 
     n = length(nd.data) / nd.batchsize
     ceil(Int,n) =#
 end
-
 
 
 function iterate(nd::NetworkData, state=(0, 0, true))
@@ -143,7 +150,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     if s3
 
         y = vcat([nd.data[k][2] for k in s1 + 1:next_s1]...)
-        println("Data reading...")
+        #println("Data reading...")
         if nd.type == "image"
 
             X = [load(nd.data[k][1]) for k in s1 + 1:next_s1]
@@ -168,7 +175,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     Xbatch = convert(nd.atype, nd.X_[:,:,:,s2 + 1:next_s2])
     ybatch = nd.y_[s2 + 1:next_s2]
 
-    println.([state, next_state, length(nd.y_)])
+    #println.([state, next_state, length(nd.y_)])
 
 
     return ((Xbatch, ybatch), next_state)
