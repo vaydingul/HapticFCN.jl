@@ -19,6 +19,7 @@ notify!("Script started! -- hn")
 path = CUDA.functional() ? "/userfiles/vaydingul20/data/new" : "data/new" 
 DATA_PATH = isdir(path) && path
 
+#=
 notify!("Data reading started! -- hn")
 # Load data
 X_train, y_train, _, _, material_dict = load_accel_data(DATA_PATH; mode = "normal")
@@ -28,32 +29,29 @@ notify!("Preprocessing started! -- hn")
 X_train, y_train = process_accel_signal(X_train, y_train)
 # Seperate into 3 folds for training
 kf = kfold(X_train, y_train; fold = 3, atype = a_type(Float32))
-
+=#
 # Initialization of the results vector that will be saved at the end of the training
 results = []
+JLD2.@load "10fold.jld2" kf
 
 notify!("Training started! -- hn")
 
-# For each fold run training subroutine
-for (ix, (dtrn, dtst)) in enumerate(kf.folds)
+dtrn = kf.folds[3][1]
+dtst = kf.folds[3][2]
 
-    notify!("Training $ix started! -- hn")
 
-    # Reset model
-    hn = HapticNet(; atype = a_type(Float32))
+# Reset model
+hn = HapticNet(; atype = a_type(Float32), lrn = false)
+# Train 3000 epochs in total, but take snapshot at every 1000 epochs
+# Training routine
+res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 3000)
+# Save model
+save_as_jld2(hn, "hn-3.jld2")
+# Add results to the ´results´vector
+push!(results, res)
 
-    # Train 3000 epochs in total, but take snapshot at every 1000 epochs
-    for k in 1:3
-        # Training routine
-        res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 1000)
-        # Save model
-        save_as_jld2(hn, "hn-$ix-$k.jld2")
-        # Add results to the ´results´vector
-        push!(results, res)
-    end
-end
 
 
 notify!("Training done! -- hn")
 # Save results
-JLD2.@save "results_hn.jld2" results = results
+JLD2.@save "results_hn3.jld2" results = results
