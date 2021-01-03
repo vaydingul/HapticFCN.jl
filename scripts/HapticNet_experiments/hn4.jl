@@ -32,7 +32,7 @@ kf = kfold(X_train, y_train; fold = 3, atype = a_type(Float32))
 =#
 # Initialization of the results vector that will be saved at the end of the training
 results = []
-JLD2.@load "10fold.jld2" kf
+JLD2.@load "/scratch/users/vaydingul20/workfolder/COMP541_Project/scripts/HapticNet_experiments/10fold.jld2" kf
 
 notify!("Training started! -- hn")
 
@@ -44,7 +44,7 @@ dtst = kf.folds[4][2]
 hn = HapticNet(; atype = a_type(Float32), lrn = false)
 # Train 3000 epochs in total, but take snapshot at every 1000 epochs
 # Training routine
-res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 3000)
+res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 2000)
 # Save model
 save_as_jld2(hn, "hn-4.jld2")
 # Add results to the ´results´vector
