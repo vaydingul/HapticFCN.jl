@@ -42,13 +42,13 @@ dtst = kf.folds[5][2]
 
 # Reset model
 #hn = HapticNet(; atype = a_type(Float32), lrn = false)
-hn = HapticNet("/scratch/users/vaydingul20/workfolder/hn-55.jld2")
+hn = HapticNet("/scratch/users/vaydingul20/workfolder/hn-5-5.jld2")
 
 # Train 3000 epochs in total, but take snapshot at every 1000 epochs
 # Training routine
 res = train_epoch!(hn, dtrn, dtst; progress_bar = false, fig = false, info = true, epoch = 1000)
 # Save model
-save_as_jld2(hn, "hn-5-3.jld2")
+save_as_jld2(hn, "hn-5-6.jld2")
 # Add results to the ´results´vector
 push!(results, res)
 
@@ -56,4 +56,4 @@ push!(results, res)
 
 notify!("Training done! -- hn")
 # Save results
-JLD2.@save "results_hn5-3.jld2" results = results
+JLD2.@save "results_hn5-6.jld2" results = results

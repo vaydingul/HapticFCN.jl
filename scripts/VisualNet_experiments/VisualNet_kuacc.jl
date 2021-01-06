@@ -57,7 +57,7 @@ for (ix, (dtrn, dtst)) in enumerate(kf.folds)
 
     for k in 1:3
         # Training routine
-        res = train_epoch!(vn, dtrn, dtst; progress_bar=false, fig=false, info=true, epoch=3000)
+        res = train_epoch!(vn, dtrn, dtst; progress_bar=false, fig=false, info=true, epoch=1)
         # Save model 
         save_as_jld2(vn, "vn-$ix-$k.jld2")
         # Add results to the ´results´vector
