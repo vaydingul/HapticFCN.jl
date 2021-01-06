@@ -84,6 +84,7 @@ end
 
 function length(nd::NetworkData) 
     part = ceil(Int, length(nd.data) / nd.read_count)
+    
     if nd.X_ !== nothing
         each_part = ceil(Int, length(nd.y_) / nd.batchsize)
         return part * each_part
