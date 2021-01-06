@@ -6,7 +6,6 @@ using TiledIteration
 using Images: channelview, imresize, RGB, FixedPointNumbers, UInt8, Normed
 using DSP: spectrogram, hamming, power, time, freq
 using Augmentor
-
 function process_accel_signal(X::Array{Array{Float32,1},1}, y::Array{Int8,1}; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
     #= 
     This function execute following processes:
@@ -152,7 +151,7 @@ function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},
     y .+= 1 # Add 1 to output to be able to adapt to Knet
 
     # Since, the input data is splitted into parts, output data should be copied
-    y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)] 
+   y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)] 
     
     X = cat(X..., dims=4) # Concatenate input data
     y_new = vcat(y_new...) # Concatenate output data
@@ -181,7 +180,7 @@ function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; c
     Output:
         img = Converted and resized image =#
 
-    img = augment(img, Scale(0.5) |> SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
+    img = augment(img, Scale(0.25) |> SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
     img = split_into_patches(img, crop_size) # Split the image into patches to be able to increase dataset
     
 end
