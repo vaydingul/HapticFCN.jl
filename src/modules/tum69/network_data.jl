@@ -81,6 +81,7 @@ function NetworkData(data, nd::NetworkData)
 
 end
 
+
 function length(nd::NetworkData) 
     part = ceil(Int, length(nd.data) / nd.read_count)
     if nd.X_ !== nothing
@@ -150,7 +151,7 @@ function iterate(nd::NetworkData, state=(0, 0, true))
     if s3
 
         y = vcat([nd.data[k][2] for k in s1 + 1:next_s1]...)
-        #println("Data reading...")
+        println("Data reading...")
         if nd.type == "image"
 
             X = [load(nd.data[k][1]) for k in s1 + 1:next_s1]

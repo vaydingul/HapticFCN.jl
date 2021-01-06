@@ -14,7 +14,7 @@ for (dtrn, dtst) in kf.folds[1:1]
     hn = HapticNet()
     
     #for k = 1:epoch
-    @show res = train_epoch!(hn, dtrn, dtst; progress_bar=true, fig=false, info=true, epoch=10)
+    @show res = train_epoch!(hn, dtrn, dtst; progress_bar=true, fig=false, info=true, epoch=1)
     #end
     
 end
