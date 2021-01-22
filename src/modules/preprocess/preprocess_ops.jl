@@ -209,5 +209,5 @@ function split_into_patches(img, crop_size)
     W_div = div(W, crop_size) 
     H_div = div(H, crop_size)
     itr = collect(TileIterator(axes(img[1:crop_size * W_div, 1:crop_size * H_div,:]), (crop_size, crop_size, C)))
-    cat(map(x -> reshape(img[x[1], x[2], :], (crop_size, crop_size, 3, 1)), itr)..., dims=4)
+    @views cat(map(x -> reshape(img[x[1], x[2], :], (crop_size, crop_size, 3, 1)), itr)..., dims=4)
 end
