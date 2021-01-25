@@ -34,3 +34,25 @@ In this version, mostly, the version v.0.1 is improved. The results and discussi
 * Custom implementation of *Local Response Normalization*
 * L2 Regularization implementation
 * Fix on the *haptic* data normalization
+
+
+
+## Current Situation
+
+Currently, the project is not successfully replicated. The main reason is considered as the level of replicability of the main paper.
+Future work will continue on the latest branch (v.0.2.2). 
+
+
+## Project Deliverables
+
+
+[Data Sheet](https://docs.google.com/spreadsheets/d/1KO6d-lZPePWM3OUPCAwU7RIf10dt26h3WW39059Uwas/edit?usp=sharing)
+
+
+[Research Log](https://docs.google.com/document/d/1QzXVCBX1liEPLB9E1T35SLpVcXVzFFjDJmBKs3h2mW4/edit?usp=sharing)
+
+
+[Presentation](https://docs.google.com/presentation/d/1cuKA4-ZxECWkBhPrMd1y_-96mtv0fQAYAy8M5A_3bMM/edit?usp=sharing)
+
+
+[Technical Report](https://www.overleaf.com/read/kzvsntmwmtgv)
