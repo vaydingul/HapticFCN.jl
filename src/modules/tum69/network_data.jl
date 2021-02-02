@@ -8,81 +8,99 @@ using Images
 using DelimitedFiles
 import Base: length, iterate, vcat
 
-mutable struct NetworkData
+abstract type GenericDataHandler end
 
-    ### Constructor inputs
-    # main_path::String # Main path of the data
-    # read_type::String # Basic or normal
-    # train::Bool # Will train data be read?
-    # test::Bool # Will test data be read?
-    # concat_train_test::Bool # Is the concatenation of the train and test data required? (When k-fold is being applied)
+struct TUM69DataHandler <: GenericDataHandler
 
-    data::Array{Tuple{String,Int8}} # Paths of the individual data point
-
-    X_ # Temporary data fields to be stored in CPU
-    y_ # Temporary data fields to be stored in CPU
-
-    type::String # Whether acceleration or image ==> "accel", "image"
-    material_dict::Dict{Int8,String}
-    shuffle::Bool
-    read_rate
-    read_count::Int # Whether all data will be read in once or will be iterated through
-    batchsize::Int # Batchsize during training
-    atype
-   
-    # Class of the individual data point, since it is Int value, it can be stored as variable directly
-
-    # These two for the case of concatenation is not desired
-    # data_train::Array{Tuple{String,Int8}}
-    # data_test::Array{Tuple{String,Int8}}
-    
-    # Material dictionary
-
-    # kfold::Bool # whether K-FOLD cross validation will be applied or not
-    # kfold_size::Int # How many folds will be included in the cross validation ?
+    # Tuple of method and its arguments
+    # The defined method should walk the directory of the data
+    # and fetch the directories of the individual datum and label;
+    # finally, should return an array of tuples consisting of the directories
+    # and the labels.
+    data_read_method 
+    # Array of tuples consisting of functions and its arguments
+    data_preprocess_method
+    # Loading method
+    is_online::Bool
 
 end
 
-function NetworkData(main_path, type; data_type="train", read_type::String="basic",shuffle::Bool=true, read_rate=1.0,  batchsize::Int=10, atype=Array{Float32})
+
+function AccelerationSignalHandlerConstructor(; is_online = false, type = "train", mode = "basic", 
+    freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
+
+    data_read_method = [(load_accel_data, Dict(:type => type, :mode => mode))]
+
+    data_preprocess_method = [(process_accel_signal, Dict(:freq_count => freq_count, :signal_count => signal_count,
+    :Fs => Fs, :window_length => window_length, :noverlap => noverlap))]
+
+    return TUM69DataHandler(data_read_method, data_preprocess_method, is_online)
+
+end
+
+
+function CameraImageHandlerConstructor(; is_online = true, type = "train", mode = "basic",
+    crop_size = 384, resize_ratio = 0.5, o...)
+
+    data_read_method = [(load_image_data, Dict(:type => type, :mode => mode))]
+
+    data_preprocess_method = [(process_image, Dict(:crop_size => crop_size, :resize_ratio => resize_ratio)), 
+    (augment_image, o...)]
+
+    return TUM69DataHandler(data_read_method, data_preprocess_method, is_online)
+
+end
+
+
+
+
+
+mutable struct NetworkData{T} where T <: GenericDataHandler
+
+    
+    data::Array{Tuple{String,Int8}} # Paths of the individual data point and labels
+
+    label_dict::Dict{Int8,String}
+    shuffle::Bool
+    read_rate
+    read_count::Int # Whether all data will be read in once or will be iterated through
+    
+    batchsize::Int # Batchsize during training
+    atype
+    
+    X_ # Temporary data fields to be stored in CPU
+    y_ # Temporary data fields to be stored in CPU
+
+
+end
+
+function NetworkData{T}(main_path; shuffle::Bool=true, read_rate=1.0,  batchsize::Int=1, atype=Array{Float32}) where T<:GenericDataHandler
     #= 
          Custom constructor =#
 
-    if type == "accel"
-
-        # data_train and data_test
-        # train_data, test_data, material_dict = load_accel_data(main_path; mode=read_type)
-        data, material_dict = load_accel_data(main_path; type=data_type, mode=read_type)
-    else
-
-        # data_train and data_test
-        data, material_dict = load_image_data(main_path; type=data_type, mode=read_type)
-
-    end
-
-    # data, train_data, test_data = concat_train_test ? (vcat(train_data, test_data), nothing, nothing) : (nothing, train_data, test_data)
-    # kfold_size = kfold ? kfold_size : nothing
-
+    data , label_dict = T.data_read_method[1](main_path;T.data_read_method[2])
 
     read_count = floor(Int, length(data) * read_rate) # Number of data points to read each time
     
     # refresh_rate = floor(Int, read_count / batchsize)
 
-    NetworkData(data, nothing, nothing, type, material_dict, shuffle, read_rate, read_count, batchsize, atype)
+    NetworkData{T}(data, label_dict, shuffle, read_rate,read_count, batchsize, atype, nothing, nothing)
 
 
 end
 
 
-function NetworkData(data, nd::NetworkData)
+function NetworkData{T}(data, nd::NetworkData{T}) where T <: GenericDataHandler
 
     read_count = floor(Int, length(data) * nd.read_rate) # Number of data points to read each time
 
-    return NetworkData(data, nd.X_, nd.y_, nd.type, nd.material_dict, nd.shuffle, nd.read_rate, read_count, nd.batchsize, nd.atype)
+    return NetworkData{T}(data, nd.label_dict, nd.shuffle, nd.read_rate,read_count, nd.batchsize, nd.atype, nd.nothing, nd.nothing)
 
 end
 
 
-function length(nd::NetworkData) 
+function length(nd::NetworkData{T}) where T <: GenericDataHandler
+     
     part = ceil(Int, length(nd.data) / nd.read_count)
     
     if nd.X_ !== nothing

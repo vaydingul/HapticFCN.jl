@@ -148,7 +148,7 @@ function augment_image(X, y, o...)
 end
 
 
-function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}, y; crop_size=384)
+function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}, y; crop_size=384, resize_ratio = 0.5)
 
     #= 
     This function execute following processes:
@@ -172,7 +172,7 @@ function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},
 
 
 
-    X = map(x->process_image_X(x; crop_size = crop_size), X)
+    X = map(x->process_image_X(x; crop_size = crop_size, resize_ratio = resize_ratio), X)
     #y .+= 1 # Add 1 to output to be able to adapt to Knet
 
     # Since, the input data is splitted into parts, output data should be copied
@@ -185,7 +185,7 @@ function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},
 end
 
 
-function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; crop_size=384)
+function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; crop_size=384, resize_ratio = 0.5)
 
     #= 
     This function execute following processes:
@@ -205,7 +205,7 @@ function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; c
     Output:
         img = Converted and resized image =#
 
-    img = augment(img, Scale(0.5) |> SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
+    img = augment(img, Scale(resize_ratio) |> SplitChannels() |> PermuteDims(2,3,1) |> ConvertEltype(Float32))
     img = split_into_patches(img, crop_size) # Split the image into patches to be able to increase dataset
     
 end
