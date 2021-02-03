@@ -25,7 +25,7 @@ struct TUM69DataHandler <: GenericDataHandler
 
 end
 
-
+# Helper functions which are specialized for this project!
 function AccelerationSignalHandlerConstructor(; is_online = false, type = "train", mode = "basic", 
     freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
 
