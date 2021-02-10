@@ -1,0 +1,23 @@
+name = "HapticFCN"
+uuid = "a08d3a4b-f591-4314-ad08-44bf2c191708"
+authors = ["Volkan Aydıngül <volkanaydingul@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+AutoGrad = "6710c13c-97f1-543f-91c5-74e8f7d95b35"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+FunctionLib = "831199b4-b228-43a0-9d39-c31c50af4323"
+GDH = "46380908-e71f-4333-a063-fa1061d3f487"
+GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+Knet = "1902f260-5fb4-5aff-8c31-6271790ab950"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
+MultivariateStats = "6f286f6a-111f-5878-ab1e-185364afe411"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
