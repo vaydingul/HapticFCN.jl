@@ -1,8 +1,5 @@
 export HapticNet
 
-include("gcn.jl")
-
-#using Knet, JLD2
 
 struct HapticNet
     #=

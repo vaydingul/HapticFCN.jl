@@ -1,7 +1,5 @@
 export VisualNet
 
-include("gcn.jl");
-
 
 #using Knet, JLD2, MAT
 

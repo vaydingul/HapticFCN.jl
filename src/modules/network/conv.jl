@@ -1,9 +1,5 @@
 export Conv
 
-#using Knet
-include("network_ops.jl")
-
-
 struct Conv
     w # weight
     b # bias

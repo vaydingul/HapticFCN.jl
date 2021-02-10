@@ -1,8 +1,5 @@
 export train_epoch!, train_generic!, save_as_jld2
 
-include("network_ops.jl");
-include("vn.jl")
-include("hn.jl")
 
 #using JLD2
 #import train_epoch!

@@ -1,5 +1,5 @@
 export GenericMLP
-include("dense.jl")
+
 
 #using Knet, Statistics
 #using Knet: Data

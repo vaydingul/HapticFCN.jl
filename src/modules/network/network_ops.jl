@@ -1,9 +1,6 @@
 export LR_norm, nll4, accuracy4, _accuracy4, train_epoch!, train_generic!, max_vote
 
-#using Knet: Data
-#using Knet, Plots
-#using IterTools: ncycle, takenth
-#using Base.Iterators: flatten
+
 
 
 function LR_norm(x::T; k=2, n=5, alpha=0.0001, beta=0.75 , atype=Array{Float32}, el_type=Float32) where T

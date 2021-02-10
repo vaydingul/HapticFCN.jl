@@ -1,16 +1,5 @@
 export GCN
 
-#using Knet: Data
-#using Knet
-#using Statistics
-
-include("conv.jl")
-include("genericmlp.jl")
-include("network_ops.jl")
-
-
-#include("..//TUM69.jl")
-#using .TUM69: NetworkData
 
 
 

@@ -55,8 +55,7 @@ end
 
 
 
-mutable struct NetworkData{T} where T <: GenericDataHandler
-
+mutable struct NetworkData{T}
     
     data::Array{Tuple{String,Int8}} # Paths of the individual data point and labels
 
