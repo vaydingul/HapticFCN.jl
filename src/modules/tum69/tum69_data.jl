@@ -24,7 +24,7 @@ function VisualData(visual_data_path::String; is_online = true, shuffle::Bool = 
     crop_size = 384, resize_ratio = 0.5, o...)
 
 
-    visual_dh = DataHandler(is_online, FunctionHolder(load_image_data, (), Dict(:type => type, :mode => mode)),
+    visual_dh = DataHandler(is_online, FunctionHolder(load_image_data, (), Dict()),
                                     FunctionHolder(load, (), Dict()))
     
     add_data_preprocess_method(visual_dh, FunctionHolder(process_image, (), Dict(:crop_size => crop_size, :resize_ratio => resize_ratio)))           
