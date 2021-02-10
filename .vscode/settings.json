@@ -1,5 +1,4 @@
 {
 	"files.autoSave": "afterDelay",
-	"editor.cursorBlinking": "expand",
-	"julia.environmentPath": "/home/volkan/Documents/Codes/HapticFCN"
+	"editor.cursorBlinking": "expand"
 }

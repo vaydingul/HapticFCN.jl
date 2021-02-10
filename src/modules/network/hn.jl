@@ -1,6 +1,5 @@
 export HapticNet
 
-
 struct HapticNet
     #=
 
