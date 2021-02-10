@@ -1,6 +1,5 @@
 module Network
 
-using FCN
 using Knet: Data    
 using Knet 
 using Statistics
