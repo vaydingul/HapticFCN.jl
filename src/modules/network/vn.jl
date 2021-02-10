@@ -1,8 +1,6 @@
 export VisualNet
 
 
-#using Knet, JLD2, MAT
-
 
 struct VisualNet
     #= 
