@@ -256,7 +256,7 @@ function train_epoch!(model, dtrn, dtst; progress_bar=true, fig=true, info=true,
 end
 
 
-
+#=
 function train_generic!(model, dtrn, dtst; optimizer_type = nothing, lr = nothing)
 
 
@@ -270,4 +270,4 @@ function train_generic!(model, dtrn, dtst; optimizer_type = nothing, lr = nothin
     return model(dtrn), model(dtst), model.accuracy_fnc(model; data=dtrn), model.accuracy_fnc(model; data=dtst)
 
 end
-
+=#
