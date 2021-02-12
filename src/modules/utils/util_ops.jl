@@ -2,7 +2,6 @@ export notify!, a_type #kfold
 
 
 using CUDA
-using Knet
 
 
 

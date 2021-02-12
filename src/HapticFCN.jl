@@ -1,7 +1,7 @@
 module HapticFCN
 
-include("./modules/TUM69.jl")
-include("./modules/Network.jl")
-include("./modules/Utils.jl")
+include("./modules/TUM69.jl"); export TUM69
+include("./modules/Network.jl"); export Network
+include("./modules/Utils.jl"); export Utils
 
 end # module

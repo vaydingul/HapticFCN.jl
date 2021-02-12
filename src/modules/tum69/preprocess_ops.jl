@@ -1,13 +1,8 @@
 export process_accel_signal, process_accel_signal_X, process_image, process_image_X, split_into_patches, augment_image, augment_image_X
 
 
-using TiledIteration
-using Images: channelview, imresize, RGB, FixedPointNumbers, UInt8, Normed
-using DSP: spectrogram, hamming, power, time, freq
-using Augmentor
-using MultivariateStats: fit, PCA, transform
 
-function process_accel_signal(X::Array{Array{Float32,1},1}, y::Array{Int8,1}; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
+function process_accel_signal(X, y; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
     #= 
     This function execute following processes:
         - It applies the preprocessing for all samples in the sample array
@@ -28,7 +23,7 @@ function process_accel_signal(X::Array{Array{Float32,1},1}, y::Array{Int8,1}; fr
     Output:
         X = Preprocessed X data
         y_new = Organized y data =#
-
+    X = vec.(X)
     #X = process_accel_signal_X.(X; freq_count=freq_count, signal_count=signal_count, Fs=Fs, window_length=window_length, noverlap=noverlap)
     X = map(x -> process_accel_signal_X(x; freq_count=freq_count, signal_count=signal_count, Fs=Fs, window_length=window_length, noverlap=noverlap), X)
     #y .+= 1
@@ -40,7 +35,7 @@ function process_accel_signal(X::Array{Array{Float32,1},1}, y::Array{Int8,1}; fr
 end
 
 
-function process_accel_signal_X(acc_signal::Array{Float32,1}; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
+function process_accel_signal_X(acc_signal; freq_count=50, signal_count=300, Fs=10000, window_length=500, noverlap=400)
     #= 
     This function execute following processes:
         - Calculates spectrogram of time-series acceleration data
@@ -148,7 +143,7 @@ function augment_image(X, y, o...)
 end
 
 
-function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},1}, y; crop_size=384, resize_ratio = 0.5)
+function process_image(X, y; crop_size=384, resize_ratio = 0.5)
 
     #= 
     This function execute following processes:
@@ -185,7 +180,7 @@ function process_image(X::Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2},
 end
 
 
-function process_image_X(img::Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}; crop_size=384, resize_ratio = 0.5)
+function process_image_X(img; crop_size=384, resize_ratio = 0.5)
 
     #= 
     This function execute following processes:

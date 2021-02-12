@@ -1,4 +1,5 @@
 {
 	"files.autoSave": "afterDelay",
-	"editor.cursorBlinking": "expand"
+	"editor.cursorBlinking": "expand",
+	"editor.fontFamily": "'monospace', 'Space Mono',  'Source Code Pro for Powerline',   'Ubuntu Mono', 'Anonymous Pro for Powerline'"
 }
