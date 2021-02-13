@@ -27,11 +27,13 @@ function VisualData(visual_data_path::String, o...; is_online = true, shuffle::B
     visual_dh = DataHandler(is_online, FunctionHolder(read_data, (), Dict()),
                                     FunctionHolder(load, (), Dict()))
     
-    add_data_preprocess_method(visual_dh, FunctionHolder(process_image, (), Dict(:crop_size => crop_size, :resize_ratio => resize_ratio)))
-    
     # Augmentation pipeline
     
-    #add_data_preprocess_method(visual_dh, FunctionHolder(augment_image, o,  Dict()))
+    add_data_preprocess_method(visual_dh, FunctionHolder(augment_image, o,  Dict()))
+
+    add_data_preprocess_method(visual_dh, FunctionHolder(process_image, (), Dict(:crop_size => crop_size, :resize_ratio => resize_ratio)))
+    
+    
 
     visual_nd = NetworkData(visual_dh, visual_data_path; shuffle = shuffle, batchsize = batchsize, partial = partial, atype = atype, xtype = atype )
 

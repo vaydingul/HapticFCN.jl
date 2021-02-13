@@ -1,6 +1,7 @@
 module Network
 
 using FCN
+import FCN: train_epoch!
 using Statistics
 using JLD2
 using MAT

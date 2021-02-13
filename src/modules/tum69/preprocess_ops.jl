@@ -122,7 +122,9 @@ function augment_image(X, y, o...)
         y_new = Organized y data =#
     n_ops = length(o)
     x_dim = length(X)
-    
+
+    X = convert(Array{Array{RGB{FixedPointNumbers.Normed{UInt8,8}},2}, 1}, X)
+
     X_ = X
     X_new = similar(X, (n_ops + 1) * x_dim)
     X_new[1:x_dim] = X
