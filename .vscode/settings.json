@@ -1,5 +1,6 @@
 {
 	"files.autoSave": "afterDelay",
 	"editor.cursorBlinking": "expand",
-	"editor.fontFamily": "'monospace', 'Space Mono',  'Source Code Pro for Powerline',   'Ubuntu Mono', 'Anonymous Pro for Powerline'"
+	"editor.fontFamily": "'monospace', 'Space Mono',  'Source Code Pro for Powerline',   'Ubuntu Mono', 'Anonymous Pro for Powerline'",
+	"julia.environmentPath": "/home/volkan/Documents/Codes/HapticFCN.jl"
 }

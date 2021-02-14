@@ -10,12 +10,12 @@ notify!("Script started! -- vn")
 
 
 # Set path
-path_train = CUDA.functional() ? "/userfiles/vaydingul20/data/new" : "../data/trial/image/train" # path of the main data
-path_test = CUDA.functional() ? "/userfiles/vaydingul20/data/new" : "../data/trial/image/test" # path of the main data
+path_train = CUDA.functional() ? "/userfiles/vaydingul20/data/new" : "./data/trial/image/train" # path of the main data
+path_test = CUDA.functional() ? "/userfiles/vaydingul20/data/new" : "./data/trial/image/test" # path of the main data
 
 #DATA_PATH = isdir(path) && path
 # Set pretrained network path
-alexnet_PATH = CUDA.functional() ? "/scratch/users/vaydingul20/workfolder/COMP541_Project/alexnet.mat" : "../alexnet.mat"  
+alexnet_PATH = CUDA.functional() ? "/scratch/users/vaydingul20/workfolder/COMP541_Project/alexnet.mat" : "./alexnet.mat"  
 
 
 # Augmentation pipeline

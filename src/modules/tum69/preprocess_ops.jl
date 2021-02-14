@@ -26,7 +26,7 @@ function process_accel_signal(X, y; freq_count=50, signal_count=300, Fs=10000, w
     X = vec.(X)
     #X = process_accel_signal_X.(X; freq_count=freq_count, signal_count=signal_count, Fs=Fs, window_length=window_length, noverlap=noverlap)
     X = map(x -> process_accel_signal_X(x; freq_count=freq_count, signal_count=signal_count, Fs=Fs, window_length=window_length, noverlap=noverlap), X)
-    #y .+= 1
+    y .+= 1
     y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)]
     
     X = cat(X..., dims=4)
@@ -170,7 +170,7 @@ function process_image(X, y; crop_size=384, resize_ratio = 0.5)
 
 
     X = map(x->process_image_X(x; crop_size = crop_size, resize_ratio = resize_ratio), X)
-    #y .+= 1 # Add 1 to output to be able to adapt to Knet
+    y .+= 1 # Add 1 to output to be able to adapt to Knet
 
     # Since, the input data is splitted into parts, output data should be copied
     y_new = [fill(y[ix], size(x, 4)) for (ix, x) in enumerate(X)] 
